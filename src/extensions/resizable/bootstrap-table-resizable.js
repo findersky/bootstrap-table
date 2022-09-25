@@ -1,75 +1,68 @@
 /**
  * @author: Dennis Hernández
- * @webSite: http://djhvscf.github.io/Blog
- * @version: v1.0.0
+ * @version: v2.0.0
  */
 
-(function ($) {
-    'use strict';
+const isInit = that => that.$el.data('resizableColumns') !== undefined
 
-    var initResizable = function (that) {
-        //Deletes the plugin to re-create it
-        that.$el.colResizable({disable: true});
+const initResizable = that => {
+  if (
+    that.options.resizable &&
+    !that.options.cardView &&
+    !isInit(that) &&
+    that.$el.is(':visible')
+  ) {
+    that.$el.resizableColumns({
+      store: window.store
+    })
+  }
+}
 
-        //Creates the plugin
-        that.$el.colResizable({
-            liveDrag: that.options.liveDrag,
-            fixed: that.options.fixed,
-            headerOnly: that.options.headerOnly,
-            minWidth: that.options.minWidth,
-            hoverCursor: that.options.hoverCursor,
-            dragCursor: that.options.dragCursor,
-            onResize: that.onResize,
-            onDrag: that.options.onResizableDrag,
-            resizeMode: that.options.resizeMode
-        });
-    };
+const destroy = that => {
+  if (isInit(that)) {
+    that.$el.data('resizableColumns').destroy()
+  }
+}
 
-    $.extend($.fn.bootstrapTable.defaults, {
-        resizable: false,
-        liveDrag: false,
-        fixed: true,
-        headerOnly: false,
-        minWidth: 15,
-        hoverCursor: 'e-resize',
-        dragCursor: 'e-resize',
-        onResizableResize: function (e) {
-            return false;
-        },
-        onResizableDrag: function (e) {
-            return false;
-        }
-    });
+const reInitResizable = that => {
+  destroy(that)
+  initResizable(that)
+}
 
-    var BootstrapTable = $.fn.bootstrapTable.Constructor,
-        _toggleView = BootstrapTable.prototype.toggleView,
-        _resetView = BootstrapTable.prototype.resetView;
+$.extend($.fn.bootstrapTable.defaults, {
+  resizable: false
+})
 
-    BootstrapTable.prototype.toggleView = function () {
-        _toggleView.apply(this, Array.prototype.slice.apply(arguments));
+$.BootstrapTable = class extends $.BootstrapTable {
 
-        if (this.options.resizable && this.options.cardView) {
-            //Deletes the plugin
-            $(this.$el).colResizable({disable: true});
-        }
-    };
+  initBody (...args) {
+    super.initBody(...args)
 
-    BootstrapTable.prototype.resetView = function () {
-        var that = this;
+    this.$el.off('column-switch.bs.table page-change.bs.table')
+      .on('column-switch.bs.table page-change.bs.table', () => {
+        reInitResizable(this)
+      })
 
-        _resetView.apply(this, Array.prototype.slice.apply(arguments));
+    reInitResizable(this)
+  }
 
-        if (this.options.resizable) {
-            // because in fitHeader function, we use setTimeout(func, 100);
-            setTimeout(function () {
-                initResizable(that);
-            }, 100);
-        }
-    };
+  toggleView (...args) {
+    super.toggleView(...args)
 
-    BootstrapTable.prototype.onResize = function (e) {
-        var that = $(e.currentTarget);
-        that.bootstrapTable('resetView');
-        that.data('bootstrap.table').options.onResizableResize.apply(e);
+    if (this.options.resizable && this.options.cardView) {
+      // Destroy the plugin
+      destroy(this)
     }
-})(jQuery);
+  }
+
+  resetView (...args) {
+    super.resetView(...args)
+
+    if (this.options.resizable) {
+      // because in fitHeader function, we use setTimeout(func, 100);
+      setTimeout(() => {
+        initResizable(this)
+      }, 100)
+    }
+  }
+}

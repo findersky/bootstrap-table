@@ -2,210 +2,406 @@
  * @author: aperez <aperez@datadec.es>
  * @version: v2.0.0
  *
- * @update Dennis Hernández <http://djhvscf.github.io/Blog>
+ * @update Dennis Hernández
+ * @update zhixin wen <wenzhixin2010@gmail.com>
  */
 
-!function($) {
-    'use strict';
+const Utils = $.fn.bootstrapTable.utils
 
-    var firstLoad = false;
+const theme = {
+  bootstrap3: {
+    icons: {
+      advancedSearchIcon: 'glyphicon-chevron-down'
+    },
+    classes: {},
+    html: {
+      modal: `
+        <div id="avdSearchModal_%s"  class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-xs">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">%s</h4>
+              </div>
+              <div class="modal-body modal-body-custom">
+                <div class="container-fluid" id="avdSearchModalContent_%s"
+                  style="padding-right: 0px; padding-left: 0px;" >
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" id="btnCloseAvd_%s" class="btn btn-%s">%s</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+    }
+  },
+  bootstrap4: {
+    icons: {
+      advancedSearchIcon: 'fa-chevron-down'
+    },
+    classes: {},
+    html: {
+      modal: `
+        <div id="avdSearchModal_%s"  class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-xs">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title">%s</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body modal-body-custom">
+                <div class="container-fluid" id="avdSearchModalContent_%s"
+                  style="padding-right: 0; padding-left: 0;" >
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" id="btnCloseAvd_%s" class="btn btn-%s">%s</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+    }
+  },
+  bootstrap5: {
+    icons: {
+      advancedSearchIcon: 'bi-chevron-down'
+    },
+    classes: {
+      formGroup: 'mb-3'
+    },
+    html: {
+      modal: `
+        <div id="avdSearchModal_%s" class="modal fade" tabindex="-1" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-xs">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">%s</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body modal-body-custom">
+                <div class="container-fluid" id="avdSearchModalContent_%s"
+                  style="padding-right: 0; padding-left: 0;" >
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" id="btnCloseAvd_%s" class="btn btn-%s">%s</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+    }
+  },
+  bulma: {
+    icons: {
+      advancedSearchIcon: 'fa-chevron-down'
+    },
+    classes: {},
+    html: {
+      modal: `
+        <div class="modal" id="avdSearchModal_%s">
+          <div class="modal-background"></div>
+          <div class="modal-card">
+            <header class="modal-card-head">
+              <p class="modal-card-title">%s</p>
+              <button class="delete" aria-label="close"></button>
+            </header>
+            <section class="modal-card-body" id="avdSearchModalContent_%s"></section>
+            <footer class="modal-card-foot">
+              <button class="button" id="btnCloseAvd_%s" data-close="btn btn-%s">%s</button>
+            </footer>
+          </div>
+        </div>
+      `
+    }
+  },
+  foundation: {
+    icons: {
+      advancedSearchIcon: 'fa-chevron-down'
+    },
+    classes: {},
+    html: {
+      modal: `
+        <div class="reveal" id="avdSearchModal_%s" data-reveal>
+          <h1>%s</h1>
+          <div id="avdSearchModalContent_%s">
 
-    var sprintf = $.fn.bootstrapTable.utils.sprintf;
+          </div>
+          <button class="close-button" data-close aria-label="Close modal" type="button">
+            <span aria-hidden="true">&times;</span>
+          </button>
 
-    var showAvdSearch = function(pColumns, searchTitle, searchText, that) {
-        if (!$("#avdSearchModal" + "_" + that.options.idTable).hasClass("modal")) {
-            var vModal = sprintf("<div id=\"avdSearchModal%s\"  class=\"modal fade\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"mySmallModalLabel\" aria-hidden=\"true\">", "_" + that.options.idTable);
-            vModal += "<div class=\"modal-dialog modal-xs\">";
-            vModal += " <div class=\"modal-content\">";
-            vModal += "  <div class=\"modal-header\">";
-            vModal += "   <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\" >&times;</button>";
-            vModal += sprintf("   <h4 class=\"modal-title\">%s</h4>", searchTitle);
-            vModal += "  </div>";
-            vModal += "  <div class=\"modal-body modal-body-custom\">";
-            vModal += sprintf("   <div class=\"container-fluid\" id=\"avdSearchModalContent%s\" style=\"padding-right: 0px;padding-left: 0px;\" >", "_" + that.options.idTable);
-            vModal += "   </div>";
-            vModal += "  </div>";
-            vModal += "  </div>";
-            vModal += " </div>";
-            vModal += "</div>";
+          <button id="btnCloseAvd_%s" class="%s" type="button">%s</button>
+        </div>
+      `
+    }
+  },
+  materialize: {
+    icons: {
+      advancedSearchIcon: 'expand_more'
+    },
+    classes: {},
+    html: {
+      modal: `
+        <div id="avdSearchModal_%s" class="modal">
+          <div class="modal-content">
+            <h4>%s</h4>
+            <div id="avdSearchModalContent_%s">
 
-            $("body").append($(vModal));
+            </div>
+          </div>
+          <div class="modal-footer">
+            <a href="javascript:void(0)"" id="btnCloseAvd_%s" class="modal-close waves-effect waves-green btn-flat %s">%s</a>
+          </div>
+        </div>
+      `
+    }
+  },
+  semantic: {
+    icons: {
+      advancedSearchIcon: 'fa-chevron-down'
+    },
+    classes: {},
+    html: {
+      modal: `
+        <div class="ui modal" id="avdSearchModal_%s">
+          <i class="close icon"></i>
+          <div class="header">
+            %s
+          </div>
+          <div class="image content ui form" id="avdSearchModalContent_%s"></div>
+          <div class="actions">
+            <div id="btnCloseAvd_%s" class="ui black deny button %s">%s</div>
+          </div>
+        </div>
+      `
+    }
+  }
+}[$.fn.bootstrapTable.theme]
 
-            var vFormAvd = createFormAvd(pColumns, searchText, that),
-                timeoutId = 0;;
+$.extend($.fn.bootstrapTable.defaults, {
+  advancedSearch: false,
+  idForm: 'advancedSearch',
+  actionForm: '',
+  idTable: undefined,
+  // eslint-disable-next-line no-unused-vars
+  onColumnAdvancedSearch (field, text) {
+    return false
+  }
+})
 
-            $('#avdSearchModalContent' + "_" + that.options.idTable).append(vFormAvd.join(''));
+$.extend($.fn.bootstrapTable.defaults.icons, {
+  advancedSearchIcon: theme.icons.advancedSearchIcon
+})
 
-            $('#' + that.options.idForm).off('keyup blur', 'input').on('keyup blur', 'input', function (event) {
-                clearTimeout(timeoutId);
-                timeoutId = setTimeout(function () {
-                    that.onColumnAdvancedSearch(event);
-                }, that.options.searchTimeOut);
-            });
+$.extend($.fn.bootstrapTable.Constructor.EVENTS, {
+  'column-advanced-search.bs.table': 'onColumnAdvancedSearch'
+})
 
-            $("#btnCloseAvd" + "_" + that.options.idTable).click(function() {
-                $("#avdSearchModal" + "_" + that.options.idTable).modal('hide');
-            });
+$.extend($.fn.bootstrapTable.locales, {
+  formatAdvancedSearch () {
+    return 'Advanced search'
+  },
+  formatAdvancedCloseButton () {
+    return 'Close'
+  }
+})
 
-            $("#avdSearchModal" + "_" + that.options.idTable).modal();
+$.extend($.fn.bootstrapTable.defaults, $.fn.bootstrapTable.locales)
+
+$.BootstrapTable = class extends $.BootstrapTable {
+  initToolbar () {
+    const o = this.options
+
+    this.showToolbar = this.showToolbar ||
+      (o.search &&
+      o.advancedSearch &&
+      o.idTable)
+
+    if (o.search && o.advancedSearch && o.idTable) {
+      this.buttons = Object.assign(this.buttons, {
+        advancedSearch: {
+          text: this.options.formatAdvancedSearch(),
+          icon: this.options.icons.advancedSearchIcon,
+          event: this.showAvdSearch,
+          attributes: {
+            'aria-label': this.options.formatAdvancedSearch(),
+            title: this.options.formatAdvancedSearch()
+          }
+        }
+      })
+    }
+
+    super.initToolbar()
+  }
+
+  showAvdSearch () {
+    const o = this.options
+    const modalSelector = `#avdSearchModal_${ o.idTable}`
+
+    if ($(modalSelector).length <= 0) {
+      $('body').append(Utils.sprintf(theme.html.modal, o.idTable, o.formatAdvancedSearch(), o.idTable, o.idTable, o.buttonsClass, o.formatAdvancedCloseButton()))
+
+      let timeoutId = 0
+
+      $(`#avdSearchModalContent_${o.idTable}`).append(this.createFormAvd().join(''))
+
+      $(`#${o.idForm}`).off('keyup blur', 'input').on('keyup blur', 'input', e => {
+        if (o.sidePagination === 'server') {
+          this.onColumnAdvancedSearch(e)
         } else {
-            $("#avdSearchModal" + "_" + that.options.idTable).modal();
+          clearTimeout(timeoutId)
+          timeoutId = setTimeout(() => {
+            this.onColumnAdvancedSearch(e)
+          }, o.searchTimeOut)
         }
-    };
+      })
 
-    var createFormAvd = function(pColumns, searchText, that) {
-        var htmlForm = [];
-        htmlForm.push(sprintf('<form class="form-horizontal" id="%s" action="%s" >', that.options.idForm, that.options.actionForm));
-        for (var i in pColumns) {
-            var vObjCol = pColumns[i];
-            if (!vObjCol.checkbox && vObjCol.visible && vObjCol.searchable) {
-                htmlForm.push('<div class="form-group">');
-                htmlForm.push(sprintf('<label class="col-sm-4 control-label">%s</label>', vObjCol.title));
-                htmlForm.push('<div class="col-sm-6">');
-                htmlForm.push(sprintf('<input type="text" class="form-control input-md" name="%s" placeholder="%s" id="%s">', vObjCol.field, vObjCol.title, vObjCol.field));
-                htmlForm.push('</div>');
-                htmlForm.push('</div>');
-            }
+      $(`#btnCloseAvd_${o.idTable}`).click(() => this.hideModal())
+
+      if ($.fn.bootstrapTable.theme === 'bulma') {
+        $(modalSelector).find('.delete').off('click').on('click', () => this.hideModal())
+      }
+
+      this.showModal()
+    } else {
+      this.showModal()
+    }
+  }
+
+  showModal () {
+    const modalSelector = `#avdSearchModal_${ this.options.idTable}`
+
+    if ($.inArray($.fn.bootstrapTable.theme, ['bootstrap3', 'bootstrap4']) !== -1) {
+      $(modalSelector).modal()
+    } else if ($.fn.bootstrapTable.theme === 'bootstrap5') {
+      if (!this.toolbarModal) {
+      //   eslint-disable-next-line no-undef
+        this.toolbarModal = new bootstrap.Modal(document.getElementById(`avdSearchModal_${ this.options.idTable}`), {})
+      }
+      this.toolbarModal.show()
+    } else if ($.fn.bootstrapTable.theme === 'bulma') {
+      $(modalSelector).toggleClass('is-active')
+    } else if ($.fn.bootstrapTable.theme === 'foundation') {
+      if (!this.toolbarModal) {
+        // eslint-disable-next-line no-undef
+        this.toolbarModal = new Foundation.Reveal($(modalSelector))
+      }
+      this.toolbarModal.open()
+    } else if ($.fn.bootstrapTable.theme === 'materialize') {
+      $(modalSelector).modal()
+      $(modalSelector).modal('open')
+    } else if ($.fn.bootstrapTable.theme === 'semantic') {
+      $(modalSelector).modal('show')
+    }
+
+  }
+
+  hideModal () {
+    const $closeModalButton = $(`#avdSearchModal_${this.options.idTable}`)
+    const modalSelector = `#avdSearchModal_${ this.options.idTable}`
+
+    if ($.inArray($.fn.bootstrapTable.theme, ['bootstrap3', 'bootstrap4']) !== -1) {
+      $closeModalButton.modal('hide')
+    } else if ($.fn.bootstrapTable.theme === 'bootstrap5') {
+      this.toolbarModal.hide()
+    } else if ($.fn.bootstrapTable.theme === 'bulma') {
+      $('html').toggleClass('is-clipped')
+      $(modalSelector).toggleClass('is-active')
+    } else if ($.fn.bootstrapTable.theme === 'foundation') {
+      this.toolbarModal.close()
+    } else if ($.fn.bootstrapTable.theme === 'materialize') {
+      $(modalSelector).modal('open')
+    } else if ($.fn.bootstrapTable.theme === 'semantic') {
+      $(modalSelector).modal('close')
+    }
+
+    if (this.options.sidePagination === 'server') {
+      this.options.pageNumber = 1
+      this.updatePagination()
+      this.trigger('column-advanced-search', this.filterColumnsPartial)
+    }
+  }
+
+
+  createFormAvd () {
+    const o = this.options
+    const html = [`<form class="form-horizontal" id="${o.idForm}" action="${o.actionForm}">`]
+
+    for (const column of this.columns) {
+      if (!column.checkbox && column.visible && column.searchable) {
+        html.push(`
+          <div class="form-group row ${theme.classes.formGroup || ''}">
+            <label class="col-sm-4 control-label">${column.title}</label>
+            <div class="col-sm-6">
+              <input type="text" class="form-control ${this.constants.classes.input}" name="${column.field}" placeholder="${column.title}" id="${column.field}">
+            </div>
+          </div>
+        `)
+      }
+    }
+
+    html.push('</form>')
+
+    return html
+  }
+
+  initSearch () {
+    super.initSearch()
+
+    if (!this.options.advancedSearch || this.options.sidePagination === 'server') {
+      return
+    }
+
+    const fp = $.isEmptyObject(this.filterColumnsPartial) ? null : this.filterColumnsPartial
+
+    this.data = fp ? this.data.filter((item, i) => {
+      for (const [key, v] of Object.entries(fp)) {
+        const fval = v.toLowerCase()
+        let value = item[key]
+        const index = this.header.fields.indexOf(key)
+
+        value = Utils.calculateObjectValue(this.header,
+          this.header.formatters[index], [value, item, i], value)
+
+        if (
+          !(index !== -1 &&
+          (typeof value === 'string' || typeof value === 'number') &&
+          (`${value}`).toLowerCase().includes(fval))
+        ) {
+          return false
         }
+      }
+      return true
+    }) : this.data
+    this.unsortedData = [...this.data]
+  }
 
-        htmlForm.push('<div class="form-group">');
-        htmlForm.push('<div class="col-sm-offset-9 col-sm-3">');
-        htmlForm.push(sprintf('<button type="button" id="btnCloseAvd%s" class="btn btn-default" >%s</button>', "_" + that.options.idTable, searchText));
-        htmlForm.push('</div>');
-        htmlForm.push('</div>');
-        htmlForm.push('</form>');
+  onColumnAdvancedSearch (e) {
+    const text = $(e.currentTarget).val().trim()
+    const $field = $(e.currentTarget)[0].id
 
-        return htmlForm;
-    };
+    if ($.isEmptyObject(this.filterColumnsPartial)) {
+      this.filterColumnsPartial = {}
+    }
+    if (text) {
+      this.filterColumnsPartial[$field] = text
+    } else {
+      delete this.filterColumnsPartial[$field]
+    }
 
-    $.extend($.fn.bootstrapTable.defaults, {
-        advancedSearch: false,
-        idForm: 'advancedSearch',
-        actionForm: '',
-        idTable: undefined,
-        onColumnAdvancedSearch: function (field, text) {
-            return false;
-        }
-    });
-
-    $.extend($.fn.bootstrapTable.defaults.icons, {
-        advancedSearchIcon: 'glyphicon-chevron-down'
-    });
-
-    $.extend($.fn.bootstrapTable.Constructor.EVENTS, {
-        'column-advanced-search.bs.table': 'onColumnAdvancedSearch'
-    });
-
-    $.extend($.fn.bootstrapTable.locales, {
-        formatAdvancedSearch: function() {
-            return 'Advanced search';
-        },
-        formatAdvancedCloseButton: function() {
-            return "Close";
-        }
-    });
-
-    $.extend($.fn.bootstrapTable.defaults, $.fn.bootstrapTable.locales);
-
-    var BootstrapTable = $.fn.bootstrapTable.Constructor,
-        _initToolbar = BootstrapTable.prototype.initToolbar,
-        _load = BootstrapTable.prototype.load,
-        _initSearch = BootstrapTable.prototype.initSearch;
-
-    BootstrapTable.prototype.initToolbar = function() {
-        _initToolbar.apply(this, Array.prototype.slice.apply(arguments));
-
-        if (!this.options.search) {
-            return;
-        }
-
-        if (!this.options.advancedSearch) {
-            return;
-        }
-
-        if (!this.options.idTable) {
-            return;
-        }
-
-        var that = this,
-            html = [];
-
-        html.push(sprintf('<div class="columns columns-%s btn-group pull-%s" role="group">', this.options.buttonsAlign, this.options.buttonsAlign));
-        html.push(sprintf('<button class="btn btn-default%s' + '" type="button" name="advancedSearch" aria-label="advanced search" title="%s">', that.options.iconSize === undefined ? '' : ' btn-' + that.options.iconSize, that.options.formatAdvancedSearch()));
-        html.push(sprintf('<i class="%s %s"></i>', that.options.iconsPrefix, that.options.icons.advancedSearchIcon))
-        html.push('</button></div>');
-
-        that.$toolbar.prepend(html.join(''));
-
-        that.$toolbar.find('button[name="advancedSearch"]')
-            .off('click').on('click', function() {
-                showAvdSearch(that.columns, that.options.formatAdvancedSearch(), that.options.formatAdvancedCloseButton(), that);
-            });
-    };
-
-    BootstrapTable.prototype.load = function(data) {
-        _load.apply(this, Array.prototype.slice.apply(arguments));
-
-        if (!this.options.advancedSearch) {
-            return;
-        }
-
-        if (typeof this.options.idTable === 'undefined') {
-            return;
-        } else {
-            if (!firstLoad) {
-                var height = parseInt($(".bootstrap-table").height());
-                height += 10;
-                $("#" + this.options.idTable).bootstrapTable("resetView", {height: height});
-                firstLoad = true;
-            }
-        }
-    };
-
-    BootstrapTable.prototype.initSearch = function () {
-        _initSearch.apply(this, Array.prototype.slice.apply(arguments));
-
-        if (!this.options.advancedSearch) {
-            return;
-        }
-
-        var that = this;
-        var fp = $.isEmptyObject(this.filterColumnsPartial) ? null : this.filterColumnsPartial;
-
-        this.data = fp ? $.grep(this.data, function (item, i) {
-            for (var key in fp) {
-                var fval = fp[key].toLowerCase();
-                var value = item[key];
-                value = $.fn.bootstrapTable.utils.calculateObjectValue(that.header,
-                    that.header.formatters[$.inArray(key, that.header.fields)],
-                    [value, item, i], value);
-
-                if (!($.inArray(key, that.header.fields) !== -1 &&
-                    (typeof value === 'string' || typeof value === 'number') &&
-                    (value + '').toLowerCase().indexOf(fval) !== -1)) {
-                    return false;
-                }
-            }
-            return true;
-        }) : this.data;
-    };
-
-    BootstrapTable.prototype.onColumnAdvancedSearch = function (event) {
-        var text = $.trim($(event.currentTarget).val());
-        var $field = $(event.currentTarget)[0].id;
-
-        if ($.isEmptyObject(this.filterColumnsPartial)) {
-            this.filterColumnsPartial = {};
-        }
-        if (text) {
-            this.filterColumnsPartial[$field] = text;
-        } else {
-            delete this.filterColumnsPartial[$field];
-        }
-
-        this.options.pageNumber = 1;
-        this.onSearch(event);
-        this.updatePagination();
-        this.trigger('column-advanced-search', $field, text);
-    };
-}(jQuery);
+    if (this.options.sidePagination !== 'server') {
+      this.options.pageNumber = 1
+      this.initSearch()
+      this.updatePagination()
+      this.trigger('column-advanced-search', $field, text)
+    }
+  }
+}

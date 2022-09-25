@@ -1,413 +1,629 @@
 /**
  * @author: Dennis Hernández
- * @webSite: http://djhvscf.github.io/Blog
- * @version: v1.2.3
- *
  * @update zhixin wen <wenzhixin2010@gmail.com>
  */
+const Utils = $.fn.bootstrapTable.utils
+const UtilsCookie = {
+  cookieIds: {
+    sortOrder: 'bs.table.sortOrder',
+    sortName: 'bs.table.sortName',
+    sortPriority: 'bs.table.sortPriority',
+    pageNumber: 'bs.table.pageNumber',
+    pageList: 'bs.table.pageList',
+    columns: 'bs.table.columns',
+    hiddenColumns: 'bs.table.hiddenColumns',
+    cardView: 'bs.table.cardView',
+    searchText: 'bs.table.searchText',
+    reorderColumns: 'bs.table.reorderColumns',
+    filterControl: 'bs.table.filterControl',
+    filterBy: 'bs.table.filterBy'
+  },
+  getCurrentHeader (that) {
+    return that.options.height ? that.$tableHeader : that.$header
+  },
+  getCurrentSearchControls (that) {
+    return that.options.height ? 'table select, table input' : 'select, input'
+  },
+  isCookieSupportedByBrowser () {
+    return navigator.cookieEnabled
+  },
+  isCookieEnabled (that, cookieName) {
+    return that.options.cookiesEnabled.includes(cookieName)
+  },
+  setCookie (that, cookieName, cookieValue) {
+    if (
+      !that.options.cookie ||
+      !UtilsCookie.isCookieEnabled(that, cookieName)
+    ) {
+      return
+    }
 
-(function ($) {
-    'use strict';
+    return that._storage.setItem(`${that.options.cookieIdTable}.${cookieName}`, cookieValue)
+  },
+  getCookie (that, cookieName) {
+    if (
+      !cookieName ||
+      !UtilsCookie.isCookieEnabled(that, cookieName)
+    ) {
+      return null
+    }
 
-    var cookieIds = {
-        sortOrder: 'bs.table.sortOrder',
-        sortName: 'bs.table.sortName',
-        pageNumber: 'bs.table.pageNumber',
-        pageList: 'bs.table.pageList',
-        columns: 'bs.table.columns',
-        searchText: 'bs.table.searchText',
-        filterControl: 'bs.table.filterControl'
-    };
+    return that._storage.getItem(`${that.options.cookieIdTable}.${cookieName}`)
+  },
+  deleteCookie (that, cookieName) {
+    return that._storage.removeItem(`${that.options.cookieIdTable}.${cookieName}`)
+  },
+  calculateExpiration (cookieExpire) {
+    const time = cookieExpire.replace(/[0-9]*/, '') // s,mi,h,d,m,y
 
-    var getCurrentHeader = function (that) {
-        var header = that.$header;
-        if (that.options.height) {
-            header = that.$tableHeader;
-        }
+    cookieExpire = cookieExpire.replace(/[A-Za-z]{1,2}/, '') // number
 
-        return header;
-    };
+    switch (time.toLowerCase()) {
+      case 's':
+        cookieExpire = +cookieExpire
+        break
+      case 'mi':
+        cookieExpire *= 60
+        break
+      case 'h':
+        cookieExpire = cookieExpire * 60 * 60
+        break
+      case 'd':
+        cookieExpire = cookieExpire * 24 * 60 * 60
+        break
+      case 'm':
+        cookieExpire = cookieExpire * 30 * 24 * 60 * 60
+        break
+      case 'y':
+        cookieExpire = cookieExpire * 365 * 24 * 60 * 60
+        break
+      default:
+        cookieExpire = undefined
+        break
+    }
+    if (!cookieExpire) {
+      return ''
+    }
+    const d = new Date()
 
-    var getCurrentSearchControls = function (that) {
-        var searchControls = 'select, input';
-        if (that.options.height) {
-            searchControls = 'table select, table input';
-        }
+    d.setTime(d.getTime() + cookieExpire * 1000)
+    return d.toGMTString()
+  },
+  initCookieFilters (bootstrapTable) {
+    setTimeout(() => {
+      const parsedCookieFilters = JSON.parse(
+        UtilsCookie.getCookie(bootstrapTable, UtilsCookie.cookieIds.filterControl))
 
-        return searchControls;
-    };
+      if (!bootstrapTable._filterControlValuesLoaded && parsedCookieFilters) {
+        const cachedFilters = {}
+        const header = UtilsCookie.getCurrentHeader(bootstrapTable)
+        const searchControls = UtilsCookie.getCurrentSearchControls(bootstrapTable)
 
-    var cookieEnabled = function () {
-        return !!(navigator.cookieEnabled);
-    };
+        const applyCookieFilters = (element, filteredCookies) => {
+          filteredCookies.forEach(cookie => {
+            const value = element.value.toString()
+            const text = cookie.text
 
-    var inArrayCookiesEnabled = function (cookieName, cookiesEnabled) {
-        var index = -1;
-
-        for (var i = 0; i < cookiesEnabled.length; i++) {
-            if (cookieName.toLowerCase() === cookiesEnabled[i].toLowerCase()) {
-                index = i;
-                break;
+            if (
+              text === '' ||
+              element.type === 'radio' &&
+              value !== text
+            ) {
+              return
             }
-        }
 
-        return index;
-    };
-
-    var setCookie = function (that, cookieName, cookieValue) {
-        if ((!that.options.cookie) || (!cookieEnabled()) || (that.options.cookieIdTable === '')) {
-            return;
-        }
-
-        if (inArrayCookiesEnabled(cookieName, that.options.cookiesEnabled) === -1) {
-            return;
-        }
-
-        cookieName = that.options.cookieIdTable + '.' + cookieName;
-
-        switch(that.options.cookieStorage) {
-            case 'cookieStorage':
-                document.cookie = [
-                    cookieName, '=', cookieValue,
-                    '; expires=' + calculateExpiration(that.options.cookieExpire),
-                    that.options.cookiePath ? '; path=' + that.options.cookiePath : '',
-                    that.options.cookieDomain ? '; domain=' + that.options.cookieDomain : '',
-                    that.options.cookieSecure ? '; secure' : ''
-                ].join('');
-            case 'localStorage':
-                localStorage.setItem(cookieName, cookieValue);
-                break;
-            case 'sessionStorage':
-                sessionStorage.setItem(cookieName, cookieValue);
-                break;
-            default:
-                return false;
-        }
-
-        return true;
-    };
-
-    var getCookie = function (that, tableName, cookieName) {
-        if (!cookieName) {
-            return null;
-        }
-
-        if (inArrayCookiesEnabled(cookieName, that.options.cookiesEnabled) === -1) {
-            return null;
-        }
-
-        cookieName = tableName + '.' + cookieName;
-
-        switch(that.options.cookieStorage) {
-            case 'cookieStorage':
-                var value = '; ' + document.cookie;
-                var parts = value.split('; ' + cookieName + '=');
-                return parts.length === 2 ? parts.pop().split(';').shift() : null;
-            case 'localStorage':
-                return localStorage.getItem(cookieName);
-            case 'sessionStorage':
-                return sessionStorage.getItem(cookieName);
-            default:
-                return null;
-        }
-    };
-
-    var deleteCookie = function (that, tableName, cookieName) {
-        cookieName = tableName + '.' + cookieName;
-
-        switch(that.options.cookieStorage) {
-            case 'cookieStorage':
-                document.cookie = [
-                    encodeURIComponent(cookieName), '=',
-                    '; expires=Thu, 01 Jan 1970 00:00:00 GMT',
-                    that.options.cookiePath ? '; path=' + that.options.cookiePath : '',
-                    that.options.cookieDomain ? '; domain=' + that.options.cookieDomain : '',
-                ].join('');
-                break;
-            case 'localStorage':
-                localStorage.removeItem(cookieName);
-                break;
-            case 'sessionStorage':
-                sessionStorage.removeItem(cookieName);
-                break;
-
-        }
-        return true;
-    };
-
-    var calculateExpiration = function(cookieExpire) {
-        var time = cookieExpire.replace(/[0-9]*/, ''); //s,mi,h,d,m,y
-        cookieExpire = cookieExpire.replace(/[A-Za-z]{1,2}/, ''); //number
-
-        switch (time.toLowerCase()) {
-            case 's':
-                cookieExpire = +cookieExpire;
-                break;
-            case 'mi':
-                cookieExpire = cookieExpire * 60;
-                break;
-            case 'h':
-                cookieExpire = cookieExpire * 60 * 60;
-                break;
-            case 'd':
-                cookieExpire = cookieExpire * 24 * 60 * 60;
-                break;
-            case 'm':
-                cookieExpire = cookieExpire * 30 * 24 * 60 * 60;
-                break;
-            case 'y':
-                cookieExpire = cookieExpire * 365 * 24 * 60 * 60;
-                break;
-            default:
-                cookieExpire = undefined;
-                break;
-        }
-        if (!cookieExpire) {
-            return '';
-        }
-        var d = new Date();
-        d.setTime(d.getTime() + cookieExpire * 1000);
-        return d.toGMTString();
-    };
-
-    var initCookieFilters = function (bootstrapTable) {
-        setTimeout(function () {
-            var parsedCookieFilters = JSON.parse(getCookie(bootstrapTable, bootstrapTable.options.cookieIdTable, cookieIds.filterControl));
-
-            if (!bootstrapTable.options.filterControlValuesLoaded && parsedCookieFilters) {
-
-                var cachedFilters = {},
-                    header = getCurrentHeader(bootstrapTable),
-                    searchControls = getCurrentSearchControls(bootstrapTable),
-
-                    applyCookieFilters = function (element, filteredCookies) {
-                        $(filteredCookies).each(function (i, cookie) {
-                            if (cookie.text !== '') {
-                                $(element).val(cookie.text);
-                                cachedFilters[cookie.field] = cookie.text;
-                            }
-                        });
-                    };
-
-                header.find(searchControls).each(function () {
-                    var field = $(this).closest('[data-field]').data('field'),
-                        filteredCookies = $.grep(parsedCookieFilters, function (cookie) {
-                            return cookie.field === field;
-                        });
-
-                    applyCookieFilters(this, filteredCookies);
-                });
-
-                bootstrapTable.initColumnSearch(cachedFilters);
-                bootstrapTable.options.filterControlValuesLoaded = true;
-                bootstrapTable.initServer();
-            }
-        }, 250);
-    };
-
-    $.extend($.fn.bootstrapTable.defaults, {
-        cookie: false,
-        cookieExpire: '2h',
-        cookiePath: null,
-        cookieDomain: null,
-        cookieSecure: null,
-        cookieIdTable: '',
-        cookiesEnabled: [
-            'bs.table.sortOrder', 'bs.table.sortName',
-            'bs.table.pageNumber', 'bs.table.pageList',
-            'bs.table.columns', 'bs.table.searchText',
-            'bs.table.filterControl'
-        ],
-        cookieStorage: 'cookieStorage', //localStorage, sessionStorage
-        //internal variable
-        filterControls: [],
-        filterControlValuesLoaded: false
-    });
-
-    $.fn.bootstrapTable.methods.push('getCookies');
-    $.fn.bootstrapTable.methods.push('deleteCookie');
-
-    $.extend($.fn.bootstrapTable.utils, {
-        setCookie: setCookie,
-        getCookie: getCookie
-    });
-
-    var BootstrapTable = $.fn.bootstrapTable.Constructor,
-        _init = BootstrapTable.prototype.init,
-        _initTable = BootstrapTable.prototype.initTable,
-        _initServer = BootstrapTable.prototype.initServer,
-        _onSort = BootstrapTable.prototype.onSort,
-        _onPageNumber = BootstrapTable.prototype.onPageNumber,
-        _onPageListChange = BootstrapTable.prototype.onPageListChange,
-        _onPagePre = BootstrapTable.prototype.onPagePre,
-        _onPageNext = BootstrapTable.prototype.onPageNext,
-        _toggleColumn = BootstrapTable.prototype.toggleColumn,
-        _selectPage = BootstrapTable.prototype.selectPage,
-        _onSearch = BootstrapTable.prototype.onSearch;
-
-    BootstrapTable.prototype.init = function () {
-        this.options.filterControls = [];
-        this.options.filterControlValuesLoaded = false;
-
-        this.options.cookiesEnabled = typeof this.options.cookiesEnabled === 'string' ?
-            this.options.cookiesEnabled.replace('[', '').replace(']', '')
-                .replace(/ /g, '').toLowerCase().split(',') :
-            this.options.cookiesEnabled;
-
-        if (this.options.filterControl) {
-            var that = this;
-            this.$el.on('column-search.bs.table', function (e, field, text) {
-                var isNewField = true;
-
-                for (var i = 0; i < that.options.filterControls.length; i++) {
-                    if (that.options.filterControls[i].field === field) {
-                        that.options.filterControls[i].text = text;
-                        isNewField = false;
-                        break;
-                    }
+            if (
+              element.tagName === 'INPUT' &&
+              element.type === 'radio' &&
+              value === text
+            ) {
+              element.checked = true
+              cachedFilters[cookie.field] = text
+            } else if (element.tagName === 'INPUT') {
+              element.value = text
+              cachedFilters[cookie.field] = text
+            } else if (
+              element.tagName === 'SELECT' &&
+              bootstrapTable.options.filterControlContainer
+            ) {
+              element.value = text
+              cachedFilters[cookie.field] = text
+            } else if (text !== '' && element.tagName === 'SELECT') {
+              cachedFilters[cookie.field] = text
+              for (const currentElement of element) {
+                if (currentElement.value === text) {
+                  currentElement.selected = true
+                  return
                 }
-                if (isNewField) {
-                    that.options.filterControls.push({
-                        field: field,
-                        text: text
-                    });
-                }
+              }
+              const option = document.createElement('option')
 
-                setCookie(that, cookieIds.filterControl, JSON.stringify(that.options.filterControls));
-            }).on('post-body.bs.table', initCookieFilters(that));
-        }
-        _init.apply(this, Array.prototype.slice.apply(arguments));
-    };
-
-    BootstrapTable.prototype.initServer = function () {
-        var bootstrapTable = this;
-        if (bootstrapTable.options.cookie && bootstrapTable.options.filterControl && !bootstrapTable.options.filterControlValuesLoaded) {
-            var cookie = JSON.parse(getCookie(bootstrapTable, bootstrapTable.options.cookieIdTable, cookieIds.filterControl));
-            if (cookie)
-                return;
-        }
-        _initServer.apply(this, Array.prototype.slice.apply(arguments));
-    };
-
-
-    BootstrapTable.prototype.initTable = function () {
-        _initTable.apply(this, Array.prototype.slice.apply(arguments));
-        this.initCookie();
-    };
-
-    BootstrapTable.prototype.initCookie = function () {
-        if (!this.options.cookie) {
-            return;
-        }
-
-        if ((this.options.cookieIdTable === '') || (this.options.cookieExpire === '') || (!cookieEnabled())) {
-            console.error("Configuration error. Please review the cookieIdTable, cookieExpire properties, if those properties are ok, then this browser does not support the cookies");
-            this.options.cookie = false; //Make sure that the cookie extension is disabled
-            return;
-        }
-
-        var sortOrderCookie = getCookie(this, this.options.cookieIdTable, cookieIds.sortOrder),
-            sortOrderNameCookie = getCookie(this, this.options.cookieIdTable, cookieIds.sortName),
-            pageNumberCookie = getCookie(this, this.options.cookieIdTable, cookieIds.pageNumber),
-            pageListCookie = getCookie(this, this.options.cookieIdTable, cookieIds.pageList),
-            columnsCookie = JSON.parse(getCookie(this, this.options.cookieIdTable, cookieIds.columns)),
-            searchTextCookie = getCookie(this, this.options.cookieIdTable, cookieIds.searchText);
-
-        //sortOrder
-        this.options.sortOrder = sortOrderCookie ? sortOrderCookie : this.options.sortOrder;
-        //sortName
-        this.options.sortName = sortOrderNameCookie ? sortOrderNameCookie : this.options.sortName;
-        //pageNumber
-        this.options.pageNumber = pageNumberCookie ? +pageNumberCookie : this.options.pageNumber;
-        //pageSize
-        this.options.pageSize = pageListCookie ? pageListCookie === this.options.formatAllRows() ? pageListCookie : +pageListCookie : this.options.pageSize;
-        //searchText
-        this.options.searchText = searchTextCookie ? searchTextCookie : '';
-
-        if (columnsCookie) {
-            $.each(this.columns, function (i, column) {
-                column.visible = $.inArray(column.field, columnsCookie) !== -1;
-            });
-        }
-    };
-
-    BootstrapTable.prototype.onSort = function () {
-        _onSort.apply(this, Array.prototype.slice.apply(arguments));
-        setCookie(this, cookieIds.sortOrder, this.options.sortOrder);
-        setCookie(this, cookieIds.sortName, this.options.sortName);
-    };
-
-    BootstrapTable.prototype.onPageNumber = function () {
-        _onPageNumber.apply(this, Array.prototype.slice.apply(arguments));
-        setCookie(this, cookieIds.pageNumber, this.options.pageNumber);
-        return false;
-    };
-
-    BootstrapTable.prototype.onPageListChange = function () {
-        _onPageListChange.apply(this, Array.prototype.slice.apply(arguments));
-        setCookie(this, cookieIds.pageList, this.options.pageSize);
-        setCookie(this, cookieIds.pageNumber, this.options.pageNumber);
-        return false;
-    };
-
-    BootstrapTable.prototype.onPagePre = function () {
-        _onPagePre.apply(this, Array.prototype.slice.apply(arguments));
-        setCookie(this, cookieIds.pageNumber, this.options.pageNumber);
-        return false;
-    };
-
-    BootstrapTable.prototype.onPageNext = function () {
-        _onPageNext.apply(this, Array.prototype.slice.apply(arguments));
-        setCookie(this, cookieIds.pageNumber, this.options.pageNumber);
-        return false;
-    };
-
-    BootstrapTable.prototype.toggleColumn = function () {
-        _toggleColumn.apply(this, Array.prototype.slice.apply(arguments));
-
-        var visibleColumns = [];
-
-        $.each(this.columns, function (i, column) {
-            if (column.visible) {
-                visibleColumns.push(column.field);
+              option.value = text
+              option.text = text
+              element.add(option, element[1])
+              element.selectedIndex = 1
             }
-        });
-
-        setCookie(this, cookieIds.columns, JSON.stringify(visibleColumns));
-    };
-
-    BootstrapTable.prototype.selectPage = function (page) {
-        _selectPage.apply(this, Array.prototype.slice.apply(arguments));
-        setCookie(this, cookieIds.pageNumber, page);
-    };
-
-    BootstrapTable.prototype.onSearch = function () {
-        var target = Array.prototype.slice.apply(arguments);
-        _onSearch.apply(this, target);
-
-        if ($(target[0].currentTarget).parent().hasClass('search')) {
-            setCookie(this, cookieIds.searchText, this.searchText);
+          })
         }
-        setCookie(this, cookieIds.pageNumber, this.options.pageNumber);
-    };
 
-    BootstrapTable.prototype.getCookies = function () {
-        var bootstrapTable = this;
-        var cookies = {};
-        $.each(cookieIds, function(key, value) {
-            cookies[key] = getCookie(bootstrapTable, bootstrapTable.options.cookieIdTable, value);
-            if (key === 'columns') {
-                cookies[key] = JSON.parse(cookies[key]);
+        let filterContainer = header
+
+        if (bootstrapTable.options.filterControlContainer) {
+          filterContainer = $(`${bootstrapTable.options.filterControlContainer}`)
+        }
+
+        filterContainer.find(searchControls).each(function () {
+          const field = $(this).closest('[data-field]').data('field')
+          const filteredCookies = parsedCookieFilters.filter(cookie => cookie.field === field)
+
+          applyCookieFilters(this, filteredCookies)
+        })
+
+        bootstrapTable.initColumnSearch(cachedFilters)
+        bootstrapTable._filterControlValuesLoaded = true
+        bootstrapTable.initServer()
+      }
+    }, 250)
+  }
+}
+
+$.extend($.fn.bootstrapTable.defaults, {
+  cookie: false,
+  cookieExpire: '2h',
+  cookiePath: null,
+  cookieDomain: null,
+  cookieSecure: null,
+  cookieSameSite: 'Lax',
+  cookieIdTable: '',
+  cookiesEnabled: [
+    'bs.table.sortOrder', 'bs.table.sortName', 'bs.table.sortPriority',
+    'bs.table.pageNumber', 'bs.table.pageList',
+    'bs.table.hiddenColumns', 'bs.table.columns', 'bs.table.searchText',
+    'bs.table.filterControl', 'bs.table.filterBy',
+    'bs.table.reorderColumns', 'bs.table.cardView'
+  ],
+  cookieStorage: 'cookieStorage', // localStorage, sessionStorage, customStorage
+  cookieCustomStorageGet: null,
+  cookieCustomStorageSet: null,
+  cookieCustomStorageDelete: null,
+  // internal variable
+  _filterControls: [],
+  _filterControlValuesLoaded: false,
+  _storage: {
+    setItem: undefined,
+    getItem: undefined,
+    removeItem: undefined
+  }
+})
+
+$.fn.bootstrapTable.methods.push('getCookies')
+$.fn.bootstrapTable.methods.push('deleteCookie')
+
+$.extend($.fn.bootstrapTable.utils, {
+  setCookie: UtilsCookie.setCookie,
+  getCookie: UtilsCookie.getCookie
+})
+
+$.BootstrapTable = class extends $.BootstrapTable {
+  init () {
+    if (this.options.cookie) {
+      if (this.options.cookieStorage === 'cookieStorage' && !UtilsCookie.isCookieSupportedByBrowser()) {
+        throw new Error('Cookies are not enabled in this browser.')
+      }
+
+      this.configureStorage()
+
+      // FilterBy logic
+      const filterByCookieValue = UtilsCookie.getCookie(this, UtilsCookie.cookieIds.filterBy)
+
+      if (typeof filterByCookieValue === 'boolean' && !filterByCookieValue) {
+        throw new Error('The cookie value of filterBy must be a json!')
+      }
+
+      let filterByCookie = {}
+
+      try {
+        filterByCookie = JSON.parse(filterByCookieValue)
+      } catch (e) {
+        throw new Error('Could not parse the json of the filterBy cookie!')
+      }
+      this.filterColumns = filterByCookie ? filterByCookie : {}
+
+      // FilterControl logic
+      this._filterControls = []
+      this._filterControlValuesLoaded = false
+
+      this.options.cookiesEnabled = typeof this.options.cookiesEnabled === 'string' ?
+        this.options.cookiesEnabled.replace('[', '').replace(']', '')
+          .replace(/'/g, '').replace(/ /g, '').toLowerCase().split(',') :
+        this.options.cookiesEnabled
+
+      if (this.options.filterControl) {
+        const that = this
+
+        this.$el.on('column-search.bs.table', (e, field, text) => {
+          let isNewField = true
+
+          for (let i = 0; i < that._filterControls.length; i++) {
+            if (that._filterControls[i].field === field) {
+              that._filterControls[i].text = text
+              isNewField = false
+              break
             }
-        });
-        return cookies;
-    };
+          }
+          if (isNewField) {
+            that._filterControls.push({
+              field,
+              text
+            })
+          }
 
-    BootstrapTable.prototype.deleteCookie = function (cookieName) {
-        if ((cookieName === '') || (!cookieEnabled())) {
-            return;
+          UtilsCookie.setCookie(that, UtilsCookie.cookieIds.filterControl, JSON.stringify(that._filterControls))
+        }).on('created-controls.bs.table', UtilsCookie.initCookieFilters(that))
+      }
+    }
+    super.init()
+  }
+
+  initServer (...args) {
+    if (
+      this.options.cookie &&
+      this.options.filterControl &&
+      !this._filterControlValuesLoaded
+    ) {
+      const cookie = JSON.parse(UtilsCookie.getCookie(this, UtilsCookie.cookieIds.filterControl))
+
+      if (cookie) {
+        return
+      }
+    }
+    super.initServer(...args)
+  }
+
+  initTable (...args) {
+    super.initTable(...args)
+    this.initCookie()
+  }
+
+  onSort (...args) {
+    super.onSort(...args)
+
+    if (!this.options.cookie) {
+      return
+    }
+
+    if (this.options.sortName === undefined || this.options.sortOrder === undefined) {
+      UtilsCookie.deleteCookie(this, UtilsCookie.cookieIds.sortName)
+      UtilsCookie.deleteCookie(this, UtilsCookie.cookieIds.sortOrder)
+    } else {
+      this.options.sortPriority = null
+      UtilsCookie.deleteCookie(this, UtilsCookie.cookieIds.sortPriority)
+
+      UtilsCookie.setCookie(this, UtilsCookie.cookieIds.sortOrder, this.options.sortOrder)
+      UtilsCookie.setCookie(this, UtilsCookie.cookieIds.sortName, this.options.sortName)
+    }
+  }
+
+  onMultipleSort (...args) {
+    super.onMultipleSort(...args)
+
+    if (!this.options.cookie) {
+      return
+    }
+
+    if (this.options.sortPriority === undefined) {
+      UtilsCookie.deleteCookie(this, UtilsCookie.cookieIds.sortPriority)
+    } else {
+      this.options.sortName = undefined
+      this.options.sortOrder = undefined
+      UtilsCookie.deleteCookie(this, UtilsCookie.cookieIds.sortName)
+      UtilsCookie.deleteCookie(this, UtilsCookie.cookieIds.sortOrder)
+
+      UtilsCookie.setCookie(this, UtilsCookie.cookieIds.sortPriority, JSON.stringify(this.options.sortPriority))
+    }
+  }
+
+  onPageNumber (...args) {
+    super.onPageNumber(...args)
+    if (!this.options.cookie) {
+      return
+    }
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.pageNumber, this.options.pageNumber)
+  }
+
+  onPageListChange (...args) {
+    super.onPageListChange(...args)
+    if (!this.options.cookie) {
+      return
+    }
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.pageList, this.options.pageSize)
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.pageNumber, this.options.pageNumber)
+  }
+
+  onPagePre (...args) {
+    super.onPagePre(...args)
+    if (!this.options.cookie) {
+      return
+    }
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.pageNumber, this.options.pageNumber)
+  }
+
+  onPageNext (...args) {
+    super.onPageNext(...args)
+    if (!this.options.cookie) {
+      return
+    }
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.pageNumber, this.options.pageNumber)
+  }
+
+  _toggleColumn (...args) {
+    super._toggleColumn(...args)
+    if (!this.options.cookie) {
+      return
+    }
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.hiddenColumns, JSON.stringify(this.getHiddenColumns().map(column => column.field)))
+  }
+
+  _toggleAllColumns (...args) {
+    super._toggleAllColumns(...args)
+    if (!this.options.cookie) {
+      return
+    }
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.hiddenColumns, JSON.stringify(this.getHiddenColumns().map(column => column.field)))
+  }
+
+  toggleView () {
+    super.toggleView()
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.cardView, this.options.cardView)
+  }
+
+  selectPage (page) {
+    super.selectPage(page)
+    if (!this.options.cookie) {
+      return
+    }
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.pageNumber, page)
+  }
+
+  onSearch (event) {
+    super.onSearch(event, arguments.length > 1 ? arguments[1] : true)
+    if (!this.options.cookie) {
+      return
+    }
+    if (this.options.search) {
+      UtilsCookie.setCookie(this, UtilsCookie.cookieIds.searchText, this.searchText)
+    }
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.pageNumber, this.options.pageNumber)
+  }
+
+  initHeader (...args) {
+    if (this.options.reorderableColumns && this.options.cookie) {
+      this.columnsSortOrder = JSON.parse(UtilsCookie.getCookie(this, UtilsCookie.cookieIds.reorderColumns))
+    }
+    super.initHeader(...args)
+  }
+
+  persistReorderColumnsState (that) {
+    UtilsCookie.setCookie(that, UtilsCookie.cookieIds.reorderColumns, JSON.stringify(that.columnsSortOrder))
+  }
+
+  filterBy (...args) {
+    super.filterBy(...args)
+    if (!this.options.cookie) {
+      return
+    }
+    UtilsCookie.setCookie(this, UtilsCookie.cookieIds.filterBy, JSON.stringify(this.filterColumns))
+  }
+
+  initCookie () {
+    if (!this.options.cookie) {
+      return
+    }
+
+    if ((this.options.cookieIdTable === '') || (this.options.cookieExpire === '')) {
+      console.error('Configuration error. Please review the cookieIdTable and the cookieExpire property. If the properties are correct, then this browser does not support cookies.')
+      this.options.cookie = false // Make sure that the cookie extension is disabled
+      return
+    }
+
+    const sortOrderCookie = UtilsCookie.getCookie(this, UtilsCookie.cookieIds.sortOrder)
+    const sortOrderNameCookie = UtilsCookie.getCookie(this, UtilsCookie.cookieIds.sortName)
+    let sortPriorityCookie = UtilsCookie.getCookie(this, UtilsCookie.cookieIds.sortPriority)
+    const pageNumberCookie = UtilsCookie.getCookie(this, UtilsCookie.cookieIds.pageNumber)
+    const pageListCookie = UtilsCookie.getCookie(this, UtilsCookie.cookieIds.pageList)
+    const searchTextCookie = UtilsCookie.getCookie(this, UtilsCookie.cookieIds.searchText)
+    const cardViewCookie = UtilsCookie.getCookie(this, UtilsCookie.cookieIds.cardView)
+
+    const columnsCookieValue = UtilsCookie.getCookie(this, UtilsCookie.cookieIds.columns)
+    const hiddenColumnsCookieValue = UtilsCookie.getCookie(this, UtilsCookie.cookieIds.hiddenColumns)
+
+    if (typeof columnsCookieValue === 'boolean' && !columnsCookieValue) {
+      throw new Error('The cookie value of filterBy must be a json!')
+    }
+
+    let columnsCookie = {}
+
+    try {
+      columnsCookie = JSON.parse(columnsCookieValue)
+    } catch (e) {
+      throw new Error('Could not parse the json of the columns cookie!', columnsCookieValue)
+    }
+
+    let hiddenColumnsCookie = {}
+
+    try {
+      hiddenColumnsCookie = JSON.parse(hiddenColumnsCookieValue)
+    } catch (e) {
+      throw new Error('Could not parse the json of the hidden columns cookie!', hiddenColumnsCookieValue)
+    }
+
+    try {
+      sortPriorityCookie = JSON.parse(sortPriorityCookie)
+    } catch (e) {
+      throw new Error('Could not parse the json of the sortPriority cookie!', sortPriorityCookie)
+    }
+
+    if (!sortPriorityCookie) {
+      // sortOrder
+      this.options.sortOrder = sortOrderCookie ? sortOrderCookie : this.options.sortOrder
+      // sortName
+      this.options.sortName = sortOrderNameCookie ? sortOrderNameCookie : this.options.sortName
+    } else {
+      this.options.sortOrder = undefined
+      this.options.sortName = undefined
+    }
+
+    // sortPriority
+    this.options.sortPriority = sortPriorityCookie ? sortPriorityCookie : this.options.sortPriority
+
+    if (this.options.sortOrder || this.options.sortName) {
+      // sortPriority
+      this.options.sortPriority = null
+    }
+
+    // pageNumber
+    this.options.pageNumber = pageNumberCookie ? +pageNumberCookie : this.options.pageNumber
+    // pageSize
+    this.options.pageSize = pageListCookie ? pageListCookie === this.options.formatAllRows() ? pageListCookie : +pageListCookie : this.options.pageSize
+    // searchText
+    if (UtilsCookie.isCookieEnabled(this, 'bs.table.searchText') && this.options.searchText === '') {
+      this.options.searchText = searchTextCookie ? searchTextCookie : ''
+    }
+    // cardView
+    this.options.cardView = cardViewCookie === 'true' ? cardViewCookie : false
+
+    if (hiddenColumnsCookie) {
+      for (const column of this.columns) {
+        column.visible = !hiddenColumnsCookie.filter(columnField => {
+          if (this.isSelectionColumn(column)) {
+            return true
+          }
+
+          return columnField === column.field
+        }).length > 0 || !column.switchable
+      }
+    } else if (columnsCookie) {
+      /**
+       * This is needed for the old saved cookies!
+       * It can be removed in 2-3 Versions Later!!
+       * TODO: Remove this part (column cookie) some versions later e.g. 1.22.0
+       */
+      for (const column of this.columns) {
+        if (!column.switchable) {
+          continue
         }
 
-        deleteCookie(this, this.options.cookieIdTable, cookieIds[cookieName]);
-    };
-})(jQuery);
+        column.visible = columnsCookie.filter(columnField => {
+          if (this.isSelectionColumn(column)) {
+            return true
+          }
+          if (columnField instanceof Object) {
+            return columnField.field === column.field
+          }
+
+          return columnField === column.field
+        }).length > 0
+      }
+    }
+  }
+
+  getCookies () {
+    const bootstrapTable = this
+    const cookies = {}
+
+    $.each(UtilsCookie.cookieIds, (key, value) => {
+      cookies[key] = UtilsCookie.getCookie(bootstrapTable, value)
+      if (key === 'columns' || key === 'hiddenColumns' || key === 'sortPriority') {
+        cookies[key] = JSON.parse(cookies[key])
+      }
+    })
+    return cookies
+  }
+
+  deleteCookie (cookieName) {
+    if (!cookieName) {
+      return
+    }
+
+    UtilsCookie.deleteCookie(this, UtilsCookie.cookieIds[cookieName])
+  }
+
+  configureStorage () {
+    const that = this
+
+    this._storage = {}
+    switch (this.options.cookieStorage) {
+      case 'cookieStorage':
+        this._storage.setItem = function (cookieName, cookieValue) {
+          document.cookie = [
+            cookieName, '=', encodeURIComponent(cookieValue),
+            `; expires=${UtilsCookie.calculateExpiration(that.options.cookieExpire)}`,
+            that.options.cookiePath ? `; path=${that.options.cookiePath}` : '',
+            that.options.cookieDomain ? `; domain=${that.options.cookieDomain}` : '',
+            that.options.cookieSecure ? '; secure' : '',
+            `;SameSite=${ that.options.cookieSameSite}`
+          ].join('')
+        }
+        this._storage.getItem = function (cookieName) {
+          const value = `; ${document.cookie}`
+          const parts = value.split(`; ${cookieName}=`)
+
+          return parts.length === 2 ? decodeURIComponent(parts.pop().split(';').shift()) : null
+        }
+        this._storage.removeItem = function (cookieName) {
+          document.cookie = [
+            encodeURIComponent(cookieName), '=',
+            '; expires=Thu, 01 Jan 1970 00:00:00 GMT',
+            that.options.cookiePath ? `; path=${that.options.cookiePath}` : '',
+            that.options.cookieDomain ? `; domain=${that.options.cookieDomain}` : '',
+            `;SameSite=${ that.options.cookieSameSite}`
+          ].join('')
+        }
+        break
+      case 'localStorage':
+        this._storage.setItem = function (cookieName, cookieValue) {
+          localStorage.setItem(cookieName, cookieValue)
+        }
+        this._storage.getItem = function (cookieName) {
+          return localStorage.getItem(cookieName)
+        }
+        this._storage.removeItem = function (cookieName) {
+          localStorage.removeItem(cookieName)
+        }
+        break
+      case 'sessionStorage':
+        this._storage.setItem = function (cookieName, cookieValue) {
+          sessionStorage.setItem(cookieName, cookieValue)
+        }
+        this._storage.getItem = function (cookieName) {
+          return sessionStorage.getItem(cookieName)
+        }
+        this._storage.removeItem = function (cookieName) {
+          sessionStorage.removeItem(cookieName)
+        }
+        break
+      case 'customStorage':
+        if (
+          !this.options.cookieCustomStorageSet ||
+          !this.options.cookieCustomStorageGet ||
+          !this.options.cookieCustomStorageDelete
+        ) {
+          throw new Error('The following options must be set while using the customStorage: cookieCustomStorageSet, cookieCustomStorageGet and cookieCustomStorageDelete')
+        }
+
+        this._storage.setItem = function (cookieName, cookieValue) {
+          Utils.calculateObjectValue(that.options, that.options.cookieCustomStorageSet, [cookieName, cookieValue], '')
+        }
+        this._storage.getItem = function (cookieName) {
+          return Utils.calculateObjectValue(that.options, that.options.cookieCustomStorageGet, [cookieName], '')
+        }
+        this._storage.removeItem = function (cookieName) {
+          Utils.calculateObjectValue(that.options, that.options.cookieCustomStorageDelete, [cookieName], '')
+        }
+
+        break
+      default:
+        throw new Error('Storage method not supported.')
+    }
+  }
+}

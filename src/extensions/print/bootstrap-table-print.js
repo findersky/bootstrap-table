@@ -1,149 +1,290 @@
-(function ($) {
-    'use strict';
+/**
+ * @update zhixin wen <wenzhixin2010@gmail.com>
+ */
 
-    var sprintf = $.fn.bootstrapTable.utils.sprintf;
+const Utils = $.fn.bootstrapTable.utils
 
-    function printPageBuilderDefault(table) {
-        return '<html><head>' +
-            '<style type="text/css" media="print">' +
-            '  @page { size: auto;   margin: 25px 0 25px 0; }' +
-            '</style>' +
-            '<style type="text/css" media="all">' +
-            'table{border-collapse: collapse; font-size: 12px; }\n' +
-            'table, th, td {border: 1px solid grey}\n' +
-            'th, td {text-align: center; vertical-align: middle;}\n' +
-            'p {font-weight: bold; margin-left:20px }\n' +
-            'table { width:94%; margin-left:3%; margin-right:3%}\n' +
-            'div.bs-table-print { text-align:center;}\n' +
-            '</style></head><title>Print Table</title><body>' +
-            '<p>Printed on: ' + new Date + ' </p>' +
-            '<div class="bs-table-print">' + table + "</div></body></html>";
+function printPageBuilderDefault (table) {
+  return `
+  <html>
+  <head>
+  <style type="text/css" media="print">
+  @page {
+    size: auto;
+    margin: 25px 0 25px 0;
+  }
+  </style>
+  <style type="text/css" media="all">
+  table {
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  table, th, td {
+    border: 1px solid grey;
+  }
+  th, td {
+    text-align: center;
+    vertical-align: middle;
+  }
+  p {
+    font-weight: bold;
+    margin-left:20px;
+  }
+  table {
+    width:94%;
+    margin-left:3%;
+    margin-right:3%;
+  }
+  div.bs-table-print {
+    text-align:center;
+  }
+  </style>
+  </head>
+  <title>Print Table</title>
+  <body>
+  <p>Printed on: ${new Date} </p>
+  <div class="bs-table-print">${table}</div>
+  </body>
+  </html>`
+}
+
+$.extend($.fn.bootstrapTable.locales, {
+  formatPrint () {
+    return 'Print'
+  }
+})
+$.extend($.fn.bootstrapTable.defaults, $.fn.bootstrapTable.locales)
+
+$.extend($.fn.bootstrapTable.defaults, {
+  showPrint: false,
+  printAsFilteredAndSortedOnUI: true,
+  printSortColumn: undefined,
+  printSortOrder: 'asc',
+  printPageBuilder (table) {
+    return printPageBuilderDefault(table)
+  }
+})
+
+$.extend($.fn.bootstrapTable.COLUMN_DEFAULTS, {
+  printFilter: undefined,
+  printIgnore: false,
+  printFormatter: undefined
+})
+
+$.extend($.fn.bootstrapTable.defaults.icons, {
+  print: {
+    bootstrap3: 'glyphicon-print icon-share',
+    bootstrap5: 'bi-printer',
+    'bootstrap-table': 'icon-printer'
+  }[$.fn.bootstrapTable.theme] || 'fa-print'
+})
+
+$.BootstrapTable = class extends $.BootstrapTable {
+  init (...args) {
+    super.init(...args)
+
+    if (!this.options.showPrint) {
+      return
     }
-    $.extend($.fn.bootstrapTable.defaults, {
-        showPrint: false,
-        printAsFilteredAndSortedOnUI: true, //boolean, when true - print table as sorted and filtered on UI.
-                                            //Please note that if true is set, along with explicit predefined print options for filtering and sorting (printFilter, printSortOrder, printSortColumn)- then they will be applied on data already filtered and sorted by UI controls.
-                                            //For printing data as filtered and sorted on UI - do not set these 3 options:printFilter, printSortOrder, printSortColumn
 
-        printSortColumn: undefined  , //String, set column field name to be sorted by
-        printSortOrder: 'asc', //String: 'asc' , 'desc'  - relevant only if printSortColumn is set
-        printPageBuilder: function(table){return printPageBuilderDefault(table)} // function, receive html <table> element as string, returns html string for printing. by default delegates to function printPageBuilderDefault(table). used for styling and adding header or footer
-    });
-    $.extend($.fn.bootstrapTable.COLUMN_DEFAULTS, {
-        printFilter: undefined, //set value to filter by in print page
-        printIgnore: false, //boolean, set true to ignore this column in the print page
-        printFormatter:undefined //function(value, row, index), formats the cell value for this column in the printed table. Function behaviour is similar to the 'formatter' column option
+    this.mergedCells = []
+  }
 
-    });
-    $.extend($.fn.bootstrapTable.defaults.icons, {
-        print: 'glyphicon-print icon-share'
-    });
+  initToolbar (...args) {
+    this.showToolbar = this.showToolbar || this.options.showPrint
 
-    var BootstrapTable = $.fn.bootstrapTable.Constructor,
-        _initToolbar = BootstrapTable.prototype.initToolbar;
-
-    BootstrapTable.prototype.initToolbar = function () {
-        this.showToolbar = this.showToolbar || this.options.showPrint;
-
-        _initToolbar.apply(this, Array.prototype.slice.apply(arguments));
-
-        if (this.options.showPrint) {
-            var that = this,
-                $btnGroup = this.$toolbar.find('>.btn-group'),
-                $print = $btnGroup.find('button.bs-print');
-
-            if (!$print.length) {
-                $print = $([
-                    '<button class="bs-print btn btn-default' + sprintf(' btn-%s"', this.options.iconSize) + ' name="print" title="print" type="button">',
-                    sprintf('<i class="%s %s"></i> ', this.options.iconsPrefix, this.options.icons.print),
-                    '</button>'].join('')).appendTo($btnGroup);
-
-                $print.click(function () {
-                    function formatValue(row, i, column ) {
-                        var value = row[column.field];
-                        if (typeof column.printFormatter === 'function') {
-                            return  column.printFormatter.apply(column, [value, row, i]);
-                        }
-                        else {
-                            return  typeof value === 'undefined' ? "-" : value;
-                        }
-                    }
-
-                    function buildTable(data, columnsArray) {
-                        var html = ['<table><thead>'];
-                        for (var k = 0; k < columnsArray.length; k++) {
-                            var columns = columnsArray[k];
-                            html.push('<tr>');
-                            for (var h = 0; h < columns.length; h++) {
-                                if (!columns[h].printIgnore) {
-                                    html.push(
-                                        '<th',
-                                        sprintf(' rowspan="%s"', columns[h].rowspan),
-                                        sprintf(' colspan="%s"', columns[h].colspan),
-                                        sprintf('>%s</th>', columns[h].title)
-                                    );
-                                }
-                            }
-                            html.push('</tr>');
-                        }
-                        html.push('</thead><tbody>');
-                        for (var i = 0; i < data.length; i++) {
-                            html.push('<tr>');
-                            for(var l = 0; l < columnsArray.length; l++) {
-                                var columns = columnsArray[l];
-                                for(var j = 0; j < columns.length; j++) {
-                                    if (!columns[j].printIgnore && columns[j].field) {
-                                        html.push('<td>', formatValue(data[i], i, columns[j]), '</td>');
-                                    }
-                                }
-                            }
-                            html.push('</tr>');
-                        }
-                        html.push('</tbody></table>');
-                        return html.join('');
-                    }
-                    function sortRows(data,colName,sortOrder) {
-                        if(!colName){
-                            return data;
-                        }
-                        var reverse = sortOrder != 'asc';
-                        reverse = -((+reverse) || -1);
-                        return  data.sort(function (a, b) {
-                            return reverse * (a[colName].localeCompare(b[colName]));
-                        });
-                    }
-                    function filterRow(row,filters) {
-                        for (var index = 0; index < filters.length; ++index) {
-                            if(row[filters[index].colName]!=filters[index].value) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                    function filterRows(data,filters) {
-                        return data.filter(function (row) {
-                            return filterRow(row,filters)
-                        });
-                    }
-                    function getColumnFilters(columns) {
-                        return !columns || !columns[0] ? [] : columns[0].filter(function (col) {
-                            return col.printFilter;
-                        }).map(function (col) {
-                            return {colName:col.field, value:col.printFilter};
-                        });
-                    }
-                    var doPrint = function (data) {
-                        data=filterRows(data,getColumnFilters(that.options.columns));
-                        data=sortRows(data,that.options.printSortColumn,that.options.printSortOrder);
-                        var table=buildTable(data,that.options.columns);
-                        var newWin = window.open("");
-                        newWin.document.write(that.options.printPageBuilder.call(this, table));
-                        newWin.print();
-                        newWin.close();
-                    };
-                    doPrint(that.options.printAsFilteredAndSortedOnUI? that.getData() : that.options.data.slice(0));
-                });
-            }
+    if (this.options.showPrint) {
+      this.buttons = Object.assign(this.buttons, {
+        print: {
+          text: this.options.formatPrint(),
+          icon: this.options.icons.print,
+          event: () => {
+            this.doPrint(this.options.printAsFilteredAndSortedOnUI ? this.getData() : this.options.data.slice(0))
+          },
+          attributes: {
+            'aria-label': this.options.formatPrint(),
+            title: this.options.formatPrint()
+          }
         }
-    };
-})(jQuery);
+      })
+    }
+
+    super.initToolbar(...args)
+  }
+
+  mergeCells (options) {
+    super.mergeCells(options)
+
+    if (!this.options.showPrint) {
+      return
+    }
+
+    let col = this.getVisibleFields().indexOf(options.field)
+
+    if (Utils.hasDetailViewIcon(this.options)) {
+      col += 1
+    }
+
+    this.mergedCells.push({
+      row: options.index,
+      col,
+      rowspan: options.rowspan || 1,
+      colspan: options.colspan || 1
+    })
+  }
+
+  doPrint (data) {
+    const _this2 = this
+    const formatValue = (row, i, column) => {
+      const value_ = Utils.getItemField(row, column.field, _this2.options.escape, column.escape)
+      const value = Utils.calculateObjectValue(column,
+        column.printFormatter || column.formatter,
+        [value_, row, i], value_)
+
+      return typeof value === 'undefined' || value === null ?
+        this.options.undefinedText : value
+    }
+
+    const buildTable = (data, columnsArray) => {
+      const dir = this.$el.attr('dir') || 'ltr'
+      const html = [`<table dir="${dir}"><thead>`]
+
+      for (const columns of columnsArray) {
+        html.push('<tr>')
+        for (let h = 0; h < columns.length; h++) {
+          if (!columns[h].printIgnore && columns[h].visible) {
+            html.push(
+              `<th
+              ${Utils.sprintf(' rowspan="%s"', columns[h].rowspan)}
+              ${Utils.sprintf(' colspan="%s"', columns[h].colspan)}
+              >${columns[h].title}</th>`)
+          }
+        }
+        html.push('</tr>')
+      }
+
+      html.push('</thead><tbody>')
+
+      const dontRender = []
+
+      if (this.mergedCells) {
+        for (let mc = 0; mc < this.mergedCells.length; mc++) {
+          const currentMergedCell = this.mergedCells[mc]
+
+          for (let rs = 0; rs < currentMergedCell.rowspan; rs++) {
+            const row = currentMergedCell.row + rs
+
+            for (let cs = 0; cs < currentMergedCell.colspan; cs++) {
+              const col = currentMergedCell.col + cs
+
+              dontRender.push(`${row },${ col}`)
+            }
+          }
+        }
+      }
+
+      for (let i = 0; i < data.length; i++) {
+        html.push('<tr>')
+
+        const columns = columnsArray.flat(1)
+
+        columns.sort((c1, c2) => {
+          return c1.colspanIndex - c2.colspanIndex
+        })
+
+        for (let j = 0; j < columns.length; j++) {
+          if (columns[j].colspanGroup > 0) continue
+
+          let rowspan = 0
+          let colspan = 0
+
+          if (this.mergedCells) {
+            for (let mc = 0; mc < this.mergedCells.length; mc++) {
+              const currentMergedCell = this.mergedCells[mc]
+
+              if (currentMergedCell.col === j && currentMergedCell.row === i) {
+                rowspan = currentMergedCell.rowspan
+                colspan = currentMergedCell.colspan
+              }
+            }
+          }
+
+          if (
+            !columns[j].printIgnore && columns[j].visible && columns[j].field &&
+              (
+                !dontRender.includes(`${i },${ j}`) ||
+                (rowspan > 0 && colspan > 0)
+              )
+          ) {
+            if (rowspan > 0 && colspan > 0) {
+              html.push(`<td ${Utils.sprintf(' rowspan="%s"', rowspan)} ${Utils.sprintf(' colspan="%s"', colspan)}>`, formatValue(data[i], i, columns[j]), '</td>')
+            } else {
+              html.push('<td>', formatValue(data[i], i, columns[j]), '</td>')
+            }
+          }
+        }
+
+
+        html.push('</tr>')
+      }
+
+      html.push('</tbody>')
+      if (this.options.showFooter) {
+        html.push('<footer><tr>')
+
+        for (const columns of columnsArray) {
+          for (let h = 0; h < columns.length; h++) {
+            if (!columns[h].printIgnore && columns[h].visible) {
+              const footerData = Utils.trToData(columns, this.$el.find('>tfoot>tr'))
+              const footerValue = Utils.calculateObjectValue(columns[h], columns[h].footerFormatter, [data], footerData[0] && footerData[0][columns[h].field] || '')
+
+              html.push(`<th>${footerValue}</th>`)
+            }
+          }
+        }
+
+        html.push('</tr></footer>')
+      }
+      html.push('</table>')
+      return html.join('')
+    }
+
+    const sortRows = (data, colName, sortOrder) => {
+      if (!colName) {
+        return data
+      }
+      let reverse = sortOrder !== 'asc'
+
+      reverse = -((+reverse) || -1)
+      return data.sort((a, b) => reverse * (a[colName].localeCompare(b[colName])))
+    }
+
+    const filterRow = (row, filters) => {
+      for (let index = 0; index < filters.length; ++index) {
+        if (row[filters[index].colName] !== filters[index].value) {
+          return false
+        }
+      }
+      return true
+    }
+
+    const filterRows = (data, filters) => data.filter(row => filterRow(row, filters))
+    const getColumnFilters = columns => !columns || !columns[0] ? [] : columns[0].filter(col => col.printFilter).map(col => ({
+      colName: col.field,
+      value: col.printFilter
+    }))
+
+    data = filterRows(data, getColumnFilters(this.options.columns))
+    data = sortRows(data, this.options.printSortColumn, this.options.printSortOrder)
+    const table = buildTable(data, this.options.columns)
+    const newWin = window.open('')
+
+    const calculatedPrintPage = Utils.calculateObjectValue(this, this.options.printPageBuilder, [table], printPageBuilderDefault(table))
+
+    newWin.document.write(calculatedPrintPage)
+    newWin.document.close()
+    newWin.focus()
+    newWin.print()
+    newWin.close()
+  }
+}

@@ -1,95 +1,105 @@
 /**
  * Bootstrap Table French (France) translation
- * Author: Dennis Hernández (http://djhvscf.github.io/Blog/)
- * Modification: Tidalf (https://github.com/TidalfFR)
+ * Author: Dennis Hernández
+ *         Tidalf (https://github.com/TidalfFR)
+ *         Nevets82 <Nevets82@gmail.com>
  */
-(function ($) {
-    'use strict';
 
-    $.fn.bootstrapTable.locales['fr-FR'] = {
-        formatLoadingMessage: function () {
-            return 'Chargement en cours, patientez, s´il vous plaît ...';
-        },
-        formatRecordsPerPage: function (pageNumber) {
-            return pageNumber + ' lignes par page';
-        },
-        formatShowingRows: function (pageFrom, pageTo, totalRows) {
-            return 'Affichage des lignes ' + pageFrom + ' à ' + pageTo + ' sur ' + totalRows + ' lignes au total';
-        },
-        formatSearch: function () {
-            return 'Rechercher';
-        },
-        formatNoMatches: function () {
-            return 'Aucun résultat trouvé';
-        },
-        formatPaginationSwitch: function () {
-            return 'Montrer/Masquer pagination';
-        },
-        formatRefresh: function () {
-            return 'Rafraîchir';
-        },
-        formatToggle: function () {
-            return 'Alterner';
-        },
-        formatColumns: function () {
-            return 'Colonnes';
-        },
-        formatAllRows: function () {
-            return 'Tous';
-        },
-        formatExport: function () {
-            return 'Exporter les données';
-        },
-        formatClearFilters: function () {
-            return 'Vider les filtres';
-        },
-        formatMultipleSort: function() {
-            return 'Tri avancé';
-        },
-        formatAddLevel: function() {
-            return 'Ajouter un niveau';
-        },
-        formatDeleteLevel: function() {
-            return 'Supprimer un niveau';
-        },
-        formatColumn: function() {
-            return 'Colonne';
-        },
-        formatOrder: function() {
-            return 'Ordre';
-        },
-        formatSortBy: function() {
-            return 'Trier par';
-        },
-        formatThenBy: function() {
-            return 'Puis par';
-        },
-        formatSort: function() {
-            return 'Trier';
-        },
-        formatCancel: function() {
-            return 'Annuler';
-        },
-        formatDuplicateAlertTitle: function() {
-            return 'Doublon(s) détecté(s)!';
-        },
-        formatDuplicateAlertDescription: function() {
-            return 'Supprimez ou changez les colonnes dupliquées.';
-        },
-        formatSortOrders: function() {
-            return {
-                asc: 'Croissant',
-                desc: 'Décroissant'
-            };
-        },
-        formatAdvancedSearch: function() {
-            return 'Recherche avancée';
-        },
-        formatAdvancedCloseButton: function() {
-            return "Fermer";
-        }
-    };
+$.fn.bootstrapTable.locales['fr-FR'] = $.fn.bootstrapTable.locales['fr'] = {
+  formatCopyRows () {
+    return 'Copier les lignes'
+  },
+  formatPrint () {
+    return 'Imprimer'
+  },
+  formatLoadingMessage () {
+    return 'Chargement en cours'
+  },
+  formatRecordsPerPage (pageNumber) {
+    return `${pageNumber} lignes par page`
+  },
+  formatShowingRows (pageFrom, pageTo, totalRows, totalNotFiltered) {
+    if (totalNotFiltered !== undefined && totalNotFiltered > 0 && totalNotFiltered > totalRows) {
+      return `Affichage de ${pageFrom} à ${pageTo} sur ${totalRows} lignes (filtrés à partir de ${totalNotFiltered} lignes)`
+    }
 
-    $.extend($.fn.bootstrapTable.defaults, $.fn.bootstrapTable.locales['fr-FR']);
+    return `Affichage de ${pageFrom} à ${pageTo} sur ${totalRows} lignes`
+  },
+  formatSRPaginationPreText () {
+    return 'page précédente'
+  },
+  formatSRPaginationPageText (page) {
+    return `vers la page ${page}`
+  },
+  formatSRPaginationNextText () {
+    return 'page suivante'
+  },
+  formatDetailPagination (totalRows) {
+    return `Affichage de ${totalRows} lignes`
+  },
+  formatClearSearch () {
+    return 'Effacer la recherche'
+  },
+  formatSearch () {
+    return 'Recherche'
+  },
+  formatNoMatches () {
+    return 'Aucun résultat'
+  },
+  formatPaginationSwitch () {
+    return 'Masquer/Afficher la pagination'
+  },
+  formatPaginationSwitchDown () {
+    return 'Afficher la pagination'
+  },
+  formatPaginationSwitchUp () {
+    return 'Masquer la pagination'
+  },
+  formatRefresh () {
+    return 'Actualiser'
+  },
+  formatToggleOn () {
+    return 'Afficher la vue carte'
+  },
+  formatToggleOff () {
+    return 'Masquer la vue carte'
+  },
+  formatColumns () {
+    return 'Colonnes'
+  },
+  formatColumnsToggleAll () {
+    return 'Tout basculer'
+  },
+  formatFullscreen () {
+    return 'Plein écran'
+  },
+  formatAllRows () {
+    return 'Tout'
+  },
+  formatAutoRefresh () {
+    return 'Actualisation automatique'
+  },
+  formatExport () {
+    return 'Exporter les données'
+  },
+  formatJumpTo () {
+    return 'ALLER'
+  },
+  formatAdvancedSearch () {
+    return 'Recherche avancée'
+  },
+  formatAdvancedCloseButton () {
+    return 'Fermer'
+  },
+  formatFilterControlSwitch () {
+    return 'Masquer/Afficher les contrôles'
+  },
+  formatFilterControlSwitchHide () {
+    return 'Masquer les contrôles'
+  },
+  formatFilterControlSwitchShow () {
+    return 'Afficher les contrôles'
+  }
+}
 
-})(jQuery);
+$.extend($.fn.bootstrapTable.defaults, $.fn.bootstrapTable.locales['fr-FR'])

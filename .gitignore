@@ -1,14 +1,16 @@
 node_modules
 bower_components
 
+# Tools
+tools/bootstrap-table-examples
+
 # docs site
 _gh_pages
 
-# build the extensions
-extensions.js
-
-# deploy the docs
-deploy.sh
+# use scss instead
+src/**/*.css
+src/**/*.css.map
+.sass-cache
 
 # old docs
 docs_
@@ -19,6 +21,8 @@ check.js
 # Common IDE files
 nbproject
 .~lock.*
+Gemfile.lock
+package-lock.json
 .buildpath
 .idea
 .project

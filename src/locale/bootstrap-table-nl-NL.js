@@ -1,52 +1,143 @@
 /**
- * Bootstrap Table Dutch translation
+ * Bootstrap Table Dutch (Nederland) translation
  * Author: Your Name <info@a2hankes.nl>
+ *         Nevets82 <Nevets82@gmail.com>
  */
-(function($) {
-    'use strict';
 
-    $.fn.bootstrapTable.locales['nl-NL'] = {
-        formatLoadingMessage: function() {
-            return 'Laden, even geduld...';
-        },
-        formatRecordsPerPage: function(pageNumber) {
-            return pageNumber + ' records per pagina';
-        },
-        formatShowingRows: function(pageFrom, pageTo, totalRows) {
-            return 'Toon ' + pageFrom + ' tot ' + pageTo + ' van ' + totalRows + ' record' + ((totalRows > 1) ? 's' : '');
-        },
-        formatDetailPagination: function(totalRows) {
-            return 'Toon ' + totalRows + ' record' + ((totalRows > 1) ? 's' : '');
-        },
-        formatSearch: function() {
-            return 'Zoeken';
-        },
-        formatNoMatches: function() {
-            return 'Geen resultaten gevonden';
-        },
-        formatRefresh: function() {
-            return 'Vernieuwen';
-        },
-        formatToggle: function() {
-            return 'Omschakelen';
-        },
-        formatColumns: function() {
-            return 'Kolommen';
-        },
-        formatAllRows: function() {
-            return 'Alle';
-        },
-        formatPaginationSwitch: function() {
-            return 'Verberg/Toon paginatie';
-        },
-        formatExport: function() {
-            return 'Exporteer data';
-        },
-        formatClearFilters: function() {
-            return 'Verwijder filters';
-        }
-    };
+$.fn.bootstrapTable.locales['nl-NL'] = $.fn.bootstrapTable.locales['nl'] = {
+  formatCopyRows () {
+    return 'Copy Rows'
+  },
+  formatPrint () {
+    return 'Print'
+  },
+  formatLoadingMessage () {
+    return 'Laden, even geduld'
+  },
+  formatRecordsPerPage (pageNumber) {
+    return `${pageNumber} records per pagina`
+  },
+  formatShowingRows (pageFrom, pageTo, totalRows, totalNotFiltered) {
+    if (totalNotFiltered !== undefined && totalNotFiltered > 0 && totalNotFiltered > totalRows) {
+      return `Toon ${pageFrom} tot ${pageTo} van ${totalRows} record${(totalRows > 1) ? 's' : ''} (gefilterd van ${totalNotFiltered} records in totaal)`
+    }
 
-    $.extend($.fn.bootstrapTable.defaults, $.fn.bootstrapTable.locales['nl-NL']);
+    return `Toon ${pageFrom} tot ${pageTo} van ${totalRows} record${(totalRows > 1) ? 's' : ''}`
+  },
+  formatSRPaginationPreText () {
+    return 'vorige pagina'
+  },
+  formatSRPaginationPageText (page) {
+    return `tot pagina ${page}`
+  },
+  formatSRPaginationNextText () {
+    return 'volgende pagina'
+  },
+  formatDetailPagination (totalRows) {
+    return `Toon ${totalRows} record${(totalRows > 1) ? 's' : ''}`
+  },
+  formatClearSearch () {
+    return 'Verwijder filters'
+  },
+  formatSearch () {
+    return 'Zoeken'
+  },
+  formatNoMatches () {
+    return 'Geen resultaten gevonden'
+  },
+  formatPaginationSwitch () {
+    return 'Verberg/Toon paginering'
+  },
+  formatPaginationSwitchDown () {
+    return 'Toon paginering'
+  },
+  formatPaginationSwitchUp () {
+    return 'Verberg paginering'
+  },
+  formatRefresh () {
+    return 'Vernieuwen'
+  },
+  formatToggleOn () {
+    return 'Toon kaartweergave'
+  },
+  formatToggleOff () {
+    return 'Verberg kaartweergave'
+  },
+  formatColumns () {
+    return 'Kolommen'
+  },
+  formatColumnsToggleAll () {
+    return 'Allen omschakelen'
+  },
+  formatFullscreen () {
+    return 'Volledig scherm'
+  },
+  formatAllRows () {
+    return 'Alle'
+  },
+  formatAutoRefresh () {
+    return 'Automatisch vernieuwen'
+  },
+  formatExport () {
+    return 'Exporteer gegevens'
+  },
+  formatJumpTo () {
+    return 'GA'
+  },
+  formatAdvancedSearch () {
+    return 'Geavanceerd zoeken'
+  },
+  formatAdvancedCloseButton () {
+    return 'Sluiten'
+  },
+  formatFilterControlSwitch () {
+    return 'Verberg/Toon controls'
+  },
+  formatFilterControlSwitchHide () {
+    return 'Verberg controls'
+  },
+  formatFilterControlSwitchShow () {
+    return 'Toon controls'
+  },
+  formatAddLevel () {
+    return 'Niveau toevoegen'
+  },
+  formatCancel () {
+    return 'Annuleren'
+  },
+  formatColumn () {
+    return 'Kolom'
+  },
+  formatDeleteLevel () {
+    return 'Niveau verwijderen'
+  },
+  formatDuplicateAlertTitle () {
+    return 'Duplicaten gevonden!'
+  },
+  formatDuplicateAlertDescription () {
+    return 'Gelieve dubbele kolommen te verwijderen of wijzigen'
+  },
+  formatMultipleSort () {
+    return 'Meervoudige sortering'
+  },
+  formatOrder () {
+    return 'Volgorde'
+  },
+  formatSort () {
+    return 'Sorteren'
+  },
+  formatSortBy () {
+    return 'Sorteren op'
+  },
+  formatThenBy () {
+    return 'vervolgens'
+  },
+  formatSortOrders () {
+    return {
+      asc: 'Oplopend',
+      desc: 'Aflopend'
+    }
+  }
+}
 
-})(jQuery);
+$.extend($.fn.bootstrapTable.defaults, $.fn.bootstrapTable.locales['nl-NL'])

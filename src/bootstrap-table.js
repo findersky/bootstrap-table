@@ -1,6 +1,6 @@
 /**
  * @author zhixin wen <wenzhixin2010@gmail.com>
- * version: 1.21.2
+ * version: 1.21.3
  * https://github.com/wenzhixin/bootstrap-table/
  */
 
@@ -2457,14 +2457,14 @@ class BootstrapTable {
       data = this.data
     }
 
-    if (params && params.useCurrentPage) {
-      data = data.slice(this.pageFrom - 1, this.pageTo)
-    }
-
     if (params && !params.includeHiddenRows) {
       const hiddenRows = this.getHiddenRows()
 
       data = data.filter(row => Utils.findIndex(hiddenRows, row) === -1)
+    }
+
+    if (params && params.useCurrentPage) {
+      data = data.slice(this.pageFrom - 1, this.pageTo)
     }
 
     if (params && params.formatted) {
@@ -3429,14 +3429,17 @@ $.fn.bootstrapTable = function (option, ...args) {
       return
     }
 
+    if (data) {
+      console.warn('You cannot initialize the table more than once!')
+      return
+    }
+
     const options = Utils.extend(true, {}, BootstrapTable.DEFAULTS, $(el).data(),
       typeof option === 'object' && option)
 
-    if (!data) {
-      data = new $.BootstrapTable(el, options)
-      $(el).data('bootstrap.table', data)
-      data.init()
-    }
+    data = new $.BootstrapTable(el, options)
+    $(el).data('bootstrap.table', data)
+    data.init()
   })
 
   return typeof value === 'undefined' ? this : value

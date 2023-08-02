@@ -4,6 +4,47 @@ title: News
 description: News and announcements for all things Bootstrap Table, including new releases.
 ---
 
+## Bootstrap Table 1.22.1
+
+<span class="post-date">6 Jul 2023</span>
+
+#### Core
+
+- **Update:** Fixed maximum call stack size exceeded error.
+- **Update:** Updated `ca-ES` locale.
+
+## Bootstrap Table 1.22.0
+
+<span class="post-date">16 Jun 2023</span>
+
+#### Core
+
+- **New:** Added `sortBy` method.
+- **New:** Added `switchableLabel` column option.
+- **New:** Added support for `class` attribute in toolbar buttons.
+- **Update:** Removed title from columns button.
+
+#### Extensions
+
+- **Update(addrbar):** Fixed clear search bug when clicking clearSearch button.
+- **Update(filter-control):** Fixed pagination server side not working bug.
+
+## Bootstrap Table 1.21.4
+
+<span class="post-date">1 Apr 2023</span>
+
+#### Core
+
+- **New:** Added searchable table option to enable sending searchable (columns) parameters.
+- **Update:** Fixed Maximum call stack size exceeded error.
+- **Update:** Fixed getData bug with hidden rows.
+- **Update:** Added support for `select` form to the `searchSelector` option.
+
+#### Extensions
+
+- **Update(filter-control):** Fixed inputs losing their content when using nested attributes.
+- **Update(reorder-rows):** Fixed reorder row bug when side-pagination is server.
+
 ## Bootstrap Table 1.21.3
 
 <span class="post-date">4 Mar 2023</span>

@@ -1,10 +1,39 @@
 ChangeLog
 ---------
 
+### 1.22.2
+
+#### Extensions
+
+- **Update(editable):** Fixed `export-saved` event error when `exportDataType` is `all`.
+- **Update(filter-control):** Fixed `searchAccentNeutralise` option not work.
+
+### 1.22.1
+
+#### Core
+
+- **Update:** Fixed maximum call stack size exceeded error.
+- **Update:** Updated `ca-ES` locale.
+
+### 1.22.0
+
+#### Core
+
+- **New:** Added `sortBy` method.
+- **New:** Added `switchableLabel` column option.
+- **New:** Added support for `class` attribute in toolbar buttons.
+- **Update:** Removed title from columns button.
+
+#### Extensions
+
+- **Update(addrbar):** Fixed clear search bug when clicking clearSearch button.
+- **Update(filter-control):** Fixed pagination server side not working bug.
+
 ### 1.21.4
 
 #### Core
 
+- **New:** Added searchable table option to enable sending searchable (columns) parameters.
 - **Update:** Fixed Maximum call stack size exceeded error.
 - **Update:** Fixed getData bug with hidden rows.
 - **Update:** Added support for `select` form to the `searchSelector` option.

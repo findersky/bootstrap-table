@@ -75,6 +75,7 @@ export interface BootstrapTableColumn {
   cellStyle?: any;
   searchable?: boolean;
   footerFormatter?: any;
+  footerStyle?: any;
   formatter?: any;
   checkboxEnabled?: boolean;
   field?: any;
@@ -324,6 +325,7 @@ export interface BootstrapTableOptions {
   ) => boolean | void;
   buttonsClass?: string;
   pageList?: number[];
+  fixedScroll?: boolean;
 }
 
 declare global {

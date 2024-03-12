@@ -1,6 +1,6 @@
 /**
  * @author zhixin wen <wenzhixin2010@gmail.com>
- * version: 1.22.1
+ * version: 1.22.3
  * https://github.com/wenzhixin/bootstrap-table/
  */
 
@@ -41,14 +41,13 @@ class BootstrapTable {
 
     // init iconsPrefix and icons
     const iconsPrefix = Utils.getIconsPrefix($.fn.bootstrapTable.theme)
-    const icons = Utils.getIcons(iconsPrefix)
 
     if (typeof opts.icons === 'string') {
       opts.icons = Utils.calculateObjectValue(null, opts.icons)
     }
 
     opts.iconsPrefix = opts.iconsPrefix || $.fn.bootstrapTable.defaults.iconsPrefix || iconsPrefix
-    opts.icons = Object.assign(icons, $.fn.bootstrapTable.defaults.icons, opts.icons)
+    opts.icons = Object.assign(Utils.getIcons(opts.iconsPrefix), $.fn.bootstrapTable.defaults.icons, opts.icons)
 
     // init buttons class
     const buttonsPrefix = opts.buttonsPrefix ? `${opts.buttonsPrefix}-` : ''
@@ -360,7 +359,7 @@ class BootstrapTable {
           column.checkbox || column.radio ?
             Utils.sprintf(' class="bs-checkbox %s"', column['class'] || '') :
             classes || class_,
-          Utils.sprintf(' style="%s"', halign + style + csses.join('; ')),
+          Utils.sprintf(' style="%s"', halign + style + csses.join('; ') || undefined),
           Utils.sprintf(' rowspan="%s"', column.rowspan),
           Utils.sprintf(' colspan="%s"', column.colspan),
           Utils.sprintf(' data-field="%s"', column.field),
@@ -577,8 +576,6 @@ class BootstrapTable {
   }
 
   _sort () {
-    this.trigger('sort', this.options.sortName, this.options.sortOrder)
-
     if (this.options.sidePagination === 'server' && this.options.serverSort) {
       this.options.pageNumber = 1
       this.initServer(this.options.silentSort)
@@ -589,6 +586,8 @@ class BootstrapTable {
       this.options.pageNumber = 1
       this.initPagination()
     }
+
+    this.trigger('sort', this.options.sortName, this.options.sortOrder)
 
     this.initSort()
     this.initBody()
@@ -957,9 +956,7 @@ class BootstrapTable {
         })
       }
     } else if (typeof opts.searchSelector === 'string') {
-      const $searchInput = Utils.getSearchInput(this)
-
-      handleInputEvent($searchInput)
+      handleInputEvent(Utils.getSearchInput(this))
     }
   }
 
@@ -1072,7 +1069,7 @@ class BootstrapTable {
           const column = this.columns[this.fieldsColumnsIndex[key]]
           let value
 
-          if (typeof key === 'string') {
+          if (typeof key === 'string' && !item.hasOwnProperty(key)) {
             value = item
             const props = key.split('.')
 
@@ -2292,7 +2289,7 @@ class BootstrapTable {
       falign = Utils.sprintf('text-align: %s; ', column.falign ? column.falign : column.align)
       valign = Utils.sprintf('vertical-align: %s; ', column.valign)
 
-      style = Utils.calculateObjectValue(null, this.options.footerStyle, [column])
+      style = Utils.calculateObjectValue(null, column.footerStyle || this.options.footerStyle, [column])
 
       if (style && style.css) {
         for (const [key, value] of Object.entries(style.css)) {
@@ -2304,7 +2301,7 @@ class BootstrapTable {
           [column['class'], style.classes].join(' ') : style.classes)
       }
 
-      html.push('<th', class_, Utils.sprintf(' style="%s"', falign + valign + csses.concat().join('; ')))
+      html.push('<th', class_, Utils.sprintf(' style="%s"', falign + valign + csses.concat().join('; ') || undefined))
       let colspan = 0
 
       if (this.footerData && this.footerData.length > 0) {
@@ -2519,7 +2516,7 @@ class BootstrapTable {
       this.footerData = data[this.options.footerField] ? [data[this.options.footerField]] : undefined
     }
 
-    fixedScroll = data.fixedScroll
+    fixedScroll = this.options.fixedScroll || data.fixedScroll
     data = Array.isArray(data) ? data : data[this.options.dataField]
 
     this.initData(data)

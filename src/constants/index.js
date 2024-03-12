@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import Utils from '../utils/index.js'
 
-const VERSION = '1.22.1'
+const VERSION = '1.22.3'
 
 const bootstrapVersion = Utils.getBootstrapVersion()
 
@@ -247,6 +247,7 @@ const DEFAULTS = {
   iconsPrefix: undefined, // init in initConstants
   icons: {}, // init in initConstants
   iconSize: undefined,
+  fixedScroll: false,
   loadingFontSize: 'auto',
   loadingTemplate (loadingMessage) {
     return `<span class="loading-wrap">
@@ -447,6 +448,7 @@ const COLUMN_DEFAULTS = {
   searchable: true,
   formatter: undefined,
   footerFormatter: undefined,
+  footerStyle: undefined,
   detailFormatter: undefined,
   searchFormatter: true,
   searchHighlightFormatter: false,

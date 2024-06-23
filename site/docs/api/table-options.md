@@ -91,33 +91,33 @@ The table options are defined in `jQuery.fn.bootstrapTable.defaults`.
     - Description: Should be used if you want to add an event to the button
     - Type: `Function|Object|String`
 
-   The `event` option can be configured in three ways.
-   One event with `click` event:
-   ```javascript
-   {
-     'event': () => { }
-   }
-   ```
+  The `event` option can be configured in three ways.
+  One event with `click` event:
+  ```javascript
+  {
+    'event': () => { }
+  }
+  ```
 
   One event with a self-defined event type:
   ```javascript
-     {
-       'event': {
-         'mouseenter': () => { }
-       }
-     }
+    {
+      'event': {
+        'mouseenter': () => { }
+      }
+    }
   ```
 
   Multiple events with self-defined event types:
-    ```javascript
-       {
-         'event': {
-           'click': () => { },
-           'mouseenter': () => { },
-           'mouseleave': () => { }
-         }
-       }
-    ```
+  ```javascript
+    {
+      'event': {
+        'click': () => { },
+        'mouseenter': () => { },
+        'mouseleave': () => { }
+      }
+    }
+  ```
 
   **Hint:** Instead of inline functions, you also can use function names.
 
@@ -965,6 +965,23 @@ The table options are defined in `jQuery.fn.bootstrapTable.defaults`.
 - **Default:** `'right'`
 
 - **Example:** [Pagination H Align](https://examples.bootstrap-table.com/#options/pagination-h-align.html)
+
+## paginationLoadMore
+
+- **Attribute:** `data-pagination-load-more`
+
+- **Type:** `Boolean`
+
+- **Detail:**
+
+  Set `true` to enable loading more data through pagination. It is only used in the client-side pagination. In general, to implement the "load more" functionality, it is often necessary to combine it with a `responseHandler` to process the returned data.
+
+  It is primarily used in scenarios where the total number of pages is unknown. In such cases, it is not possible to display the exact total count or calculate the total number of pages. Instead, a display format such as "100+" can be utilized to indicate the presence of additional items beyond the displayed count. As the user navigates to the last page, more data is loaded, along with an update to the pagination information. This process continues until all data loading is complete.
+
+- **Default:** `false`
+
+- **Example:** [Pagination Load More](https://examples.bootstrap-table.com/#options/pagination-load-more.html)
+
 
 ## paginationLoop
 

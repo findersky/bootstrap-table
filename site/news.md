@@ -4,6 +4,97 @@ title: News
 description: News and announcements for all things Bootstrap Table, including new releases.
 ---
 
+## Bootstrap Table 1.24.0
+
+<span class="post-date">22 Dec 2024</span>
+
+#### Core
+
+- **New:** Added `card-view-field` class to `card-view`.
+- **Update:** Fixed `id` not working bug in `rowAttributes`.
+- **Update:** Fixed `data` field attr not working bug.
+- **Update:** Fixed column is `undefined` bug in `updateFieldGroup` when using `refreshOptions`.
+- **Update:** Fixed `post-header` trigger bug after table destroy.
+- **Update:** Fixed `strictSearch` not working bug.
+- **Update:** Fixed `insertRow` bug after on the last row of the table.
+- **Update:** Fixed display error of total rows using load more pagination.
+- **Update:** Updated Sass and refined the SCSS file.
+- **Update:** Update Eslint and fix some lint errors.
+
+#### Extensions
+
+- **Update(cookie):** Fixed cookie columns display error after adding a column.
+- **Update(filter-control):** Fixed select not working bug after an Ajax loaded.
+
+## Bootstrap Table 1.23.5
+
+<span class="post-date">1 Oct 2024</span>
+
+#### Core
+
+- **New:** Added `getFooterData` method.
+- **Update:** Fixed `refresh` invalid url bug when `url` is relative path.
+- **Update:** Fixed `getData` bug with `formatted` param.
+- **Update:** Fixed column class option not work bug in td.
+
+## Bootstrap Table 1.23.4
+
+<span class="post-date">20 Sep 2024</span>
+
+#### Core
+
+- **New:** Added support for column options `formatter` and `footerFormatter` methods returning type `jQuery`, `HTMLElement`.
+- **New:** Added `sortReset` method to reset the current sort state.
+- **New:** Added a presentation role if no matching rows are found.
+- **Update:** Fixed `refresh` method doesn't reuse parameters provided as query bug.
+- **Update:** Fixed compatibility issues when `colspan` is set as a string.
+
+## Bootstrap Table 1.23.2
+
+<span class="post-date">27 Jul 2024</span>
+
+#### Core
+
+- **New:** Added `buttonsAttributeTitle` option to customize title attribute.
+- **Update:** Updated sort icons using SVG instead of PNG.
+- **Update:** Fixed search highlight not working when it contains multiple HTML elements.
+- **Update:** Fixed the `esbuild` bundle error.
+- **Update:** Fixed insertRow, updateRow, and updateCell methods bugs.
+- **Update:** Fixed `undefined` error when searching using the dotted field.
+
+## Bootstrap Table 1.23.1
+
+<span class="post-date">13 Jul 2024</span>
+
+#### Core
+
+- **Update:** Improved vue component init twice without `setTimeout`.
+- **Update:** Updated `af-ZA`, `fr-BE`, `fr-CH`, `fr-FR`, `fr-LU`, and `id-ID` locales.
+
+#### Extensions
+
+- **Update(editable):** Fixed editable display bug of select type.
+- **Update(sticky-header):** Fixed issue if sticky-header extension is loaded but not enabled.
+
+## Bootstrap Table 1.23.0
+
+<span class="post-date">30 Jun 2024</span>
+
+#### Core
+
+- **New:** Add support for vue3 instead of vue2.
+- **Update:** Fixed `getData` with `formatted` data bug when a column is missing.
+- **Update:** Fixed `toggleColumn` exception when the field does not exist.
+- **Update:** Fixed vue component init twice when options and columns both changed.
+
+#### Extensions
+
+- **New(addrbar):** Added `addrCustomParams` option for custom parameters.
+- **New(filter-control):** Added `filterControlSearchClear` option to stop clearing the filters when using `showSearchButton` option.
+- **Update(filter-control):** Fixed error with clear filters button when not enabled cookie extension.
+- **Update(filter-control):** Fixed bug with enabled cookie extension using `localStorage`.
+- **Update(multiple-sort):** Fixed not trigger event bug when using server-side pagination.
+
 ## Bootstrap Table 1.22.6
 
 <span class="post-date">15 May 2024</span>

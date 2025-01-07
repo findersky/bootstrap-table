@@ -1,6 +1,6 @@
 /**
  * @author zhixin wen <wenzhixin2010@gmail.com>
- * version: 1.22.6
+ * version: 1.24.0
  * https://github.com/wenzhixin/bootstrap-table/
  */
 
@@ -219,7 +219,9 @@ class BootstrapTable {
     this.columns = []
     this.fieldsColumnsIndex = []
 
-    Utils.setFieldIndex(this.options.columns)
+    if (this.optionsColumnsChanged !== false) {
+      Utils.setFieldIndex(this.options.columns)
+    }
 
     this.options.columns.forEach((columns, i) => {
       columns.forEach((_column, j) => {
@@ -299,7 +301,7 @@ class BootstrapTable {
       }
 
       columns.forEach((column, j) => {
-        const class_ = Utils.sprintf(' class="%s"', column['class'])
+        const class_ = Utils.sprintf(' class="%s"', column.class)
         const unitWidth = column.widthUnit
         const width = parseFloat(column.width)
 
@@ -334,7 +336,7 @@ class BootstrapTable {
         if (typeof column.fieldIndex !== 'undefined') {
           this.header.fields[column.fieldIndex] = column.field
           this.header.styles[column.fieldIndex] = align + style
-          this.header.classes[column.fieldIndex] = class_
+          this.header.classes[column.fieldIndex] = column.class
           this.header.formatters[column.fieldIndex] = column.formatter
           this.header.detailFormatters[column.fieldIndex] = column.detailFormatter
           this.header.events[column.fieldIndex] = column.events
@@ -534,6 +536,12 @@ class BootstrapTable {
     }
   }
 
+  sortReset () {
+    this.options.sortName = undefined
+    this.options.sortOrder = undefined
+    this._sort()
+  }
+
   sortBy (params) {
     this.options.sortName = params.field
     this.options.sortOrder = params.hasOwnProperty('sortOrder') ? params.sortOrder : 'asc'
@@ -677,7 +685,7 @@ class BootstrapTable {
 
           html.push(`<div class="keep-open ${this.constants.classes.buttonsDropdown}">
             <button class="${this.constants.buttonsClass} dropdown-toggle" type="button" ${this.constants.dataToggle}="dropdown"
-            aria-label="${opts.formatColumns()}" title="${opts.formatColumns()}">
+            aria-label="${opts.formatColumns()}" ${opts.buttonsAttributeTitle}="${opts.formatColumns()}">
             ${opts.showButtonIcons ? Utils.sprintf(this.constants.html.icon, opts.iconsPrefix, opts.icons.columns) : ''}
             ${opts.showButtonText ? opts.formatColumns() : ''}
             ${this.constants.html.dropdownCaret}
@@ -763,7 +771,11 @@ class BootstrapTable {
             if (attributeName === 'class') {
               continue
             }
-            buttonHtml += ` ${attributeName}="${value}"`
+
+            const attribute = attributeName === 'title' ?
+              this.options.buttonsAttributeTitle : attributeName
+
+            buttonHtml += ` ${attribute}="${value}"`
           }
         }
 
@@ -1080,11 +1092,11 @@ class BootstrapTable {
             const props = key.split('.')
 
             for (let i = 0; i < props.length; i++) {
-              if (value[props[i]] !== null) {
-                value = value[props[i]]
-              } else {
+              if (value[props[i]] === null || value[props[i]] === undefined) {
                 value = null
                 break
+              } else {
+                value = value[props[i]]
               }
             }
           } else {
@@ -1099,54 +1111,61 @@ class BootstrapTable {
           if (column && column.searchFormatter) {
             value = Utils.calculateObjectValue(column,
               this.header.formatters[j], [value, item, i, column.field], value)
+            if (this.header.formatters[j] && typeof value !== 'number') {
+              // search innerText
+              value = $('<div>').html(value).text()
+            }
           }
 
           if (typeof value === 'string' || typeof value === 'number') {
-            if (
-              this.options.strictSearch && `${value}`.toLowerCase() === searchText ||
-              this.options.regexSearch && Utils.regexCompare(value, rawSearchText)
-            ) {
-              return true
-            }
-
-            const largerSmallerEqualsRegex = /(?:(<=|=>|=<|>=|>|<)(?:\s+)?(-?\d+)?|(-?\d+)?(\s+)?(<=|=>|=<|>=|>|<))/gm
-            const matches = largerSmallerEqualsRegex.exec(this.searchText)
-            let comparisonCheck = false
-
-            if (matches) {
-              const operator = matches[1] || `${matches[5]}l`
-              const comparisonValue = matches[2] || matches[3]
-              const int = parseInt(value, 10)
-              const comparisonInt = parseInt(comparisonValue, 10)
-
-              switch (operator) {
-                case '>':
-                case '<l':
-                  comparisonCheck = int > comparisonInt
-                  break
-                case '<':
-                case '>l':
-                  comparisonCheck = int < comparisonInt
-                  break
-                case '<=':
-                case '=<':
-                case '>=l':
-                case '=>l':
-                  comparisonCheck = int <= comparisonInt
-                  break
-                case '>=':
-                case '=>':
-                case '<=l':
-                case '=<l':
-                  comparisonCheck = int >= comparisonInt
-                  break
-                default:
-                  break
+            if (this.options.strictSearch) {
+              if (`${value}`.toLowerCase() === searchText) {
+                return true
               }
-            }
+            } else if (this.options.regexSearch) {
+              if (Utils.regexCompare(value, rawSearchText)) {
+                return true
+              }
+            } else {
+              const largerSmallerEqualsRegex = /(?:(<=|=>|=<|>=|>|<)(?:\s+)?(-?\d+)?|(-?\d+)?(\s+)?(<=|=>|=<|>=|>|<))/gm
+              const matches = largerSmallerEqualsRegex.exec(this.searchText)
+              let comparisonCheck = false
 
-            if (comparisonCheck || `${value}`.toLowerCase().includes(searchText)) {
-              return true
+              if (matches) {
+                const operator = matches[1] || `${matches[5]}l`
+                const comparisonValue = matches[2] || matches[3]
+                const int = parseInt(value, 10)
+                const comparisonInt = parseInt(comparisonValue, 10)
+
+                switch (operator) {
+                  case '>':
+                  case '<l':
+                    comparisonCheck = int > comparisonInt
+                    break
+                  case '<':
+                  case '>l':
+                    comparisonCheck = int < comparisonInt
+                    break
+                  case '<=':
+                  case '=<':
+                  case '>=l':
+                  case '=>l':
+                    comparisonCheck = int <= comparisonInt
+                    break
+                  case '>=':
+                  case '=>':
+                  case '<=l':
+                  case '=<l':
+                    comparisonCheck = int >= comparisonInt
+                    break
+                  default:
+                    break
+                }
+              }
+
+              if (comparisonCheck || `${value}`.toLowerCase().includes(searchText)) {
+                return true
+              }
             }
           }
         }
@@ -1240,7 +1259,8 @@ class BootstrapTable {
       const totalRows = this.options.totalRows +
         (this.options.sidePagination === 'client' &&
         this.options.paginationLoadMore &&
-        !this._paginationLoaded ? ' +' : '')
+        !this._paginationLoaded &&
+        this.totalPages > 1 ? ' +' : '')
       const paginationInfo = this.paginationParts.includes('pageInfoShort') ?
         opts.formatDetailPagination(totalRows) :
         opts.formatShowingRows(this.pageFrom, this.pageTo, totalRows, opts.totalNotFiltered)
@@ -1500,33 +1520,13 @@ class BootstrapTable {
 
   // eslint-disable-next-line no-unused-vars
   initRow (item, i, data, trFragments) {
-    const html = []
-    let style = {}
-    const csses = []
-    let data_ = ''
-    let attributes = {}
-    const htmlAttributes = []
-
     if (Utils.findIndex(this.hiddenRows, item) > -1) {
       return
     }
-
-    style = Utils.calculateObjectValue(this.options, this.options.rowStyle, [item, i], style)
-
-    if (style && style.css) {
-      for (const [key, value] of Object.entries(style.css)) {
-        csses.push(`${key}: ${value}`)
-      }
-    }
-
-    attributes = Utils.calculateObjectValue(this.options,
-      this.options.rowAttributes, [item, i], attributes)
-
-    if (attributes) {
-      for (const [key, value] of Object.entries(attributes)) {
-        htmlAttributes.push(`${key}="${Utils.escapeHTML(value)}"`)
-      }
-    }
+    const style = Utils.calculateObjectValue(this.options, this.options.rowStyle, [item, i], {})
+    const attributes = Utils.calculateObjectValue(this.options,
+      this.options.rowAttributes, [item, i], {})
+    const data_ = {}
 
     if (item._data && !Utils.isEmptyObject(item._data)) {
       for (const [k, v] of Object.entries(item._data)) {
@@ -1534,61 +1534,48 @@ class BootstrapTable {
         if (k === 'index') {
           return
         }
-        data_ += ` data-${k}='${typeof v === 'object' ? JSON.stringify(v) : v}'`
+        data_[`data-${k}`] = typeof v === 'object' ? JSON.stringify(v) : v
       }
     }
-
-    html.push('<tr',
-      Utils.sprintf(' %s', htmlAttributes.length ? htmlAttributes.join(' ') : undefined),
-      Utils.sprintf(' id="%s"', Array.isArray(item) ? undefined : item._id),
-      Utils.sprintf(' class="%s"', style.classes || (Array.isArray(item) ? undefined : item._class)),
-      Utils.sprintf(' style="%s"', Array.isArray(item) ? undefined : item._style),
-      ` data-index="${i}"`,
-      Utils.sprintf(' data-uniqueid="%s"', Utils.getItemField(item, this.options.uniqueId, false)),
-      Utils.sprintf(' data-has-detail-view="%s"', this.options.detailView && Utils.calculateObjectValue(null, this.options.detailFilter, [i, item]) ? 'true' : undefined),
-      Utils.sprintf('%s', data_),
-      '>'
-    )
-
-    if (this.options.cardView) {
-      html.push(`<td colspan="${this.header.fields.length}"><div class="card-views">`)
-    }
-
+    const tr = Utils.h('tr', {
+      id: Array.isArray(item) ? undefined : item._id,
+      class: style && style.classes || (Array.isArray(item) ? undefined : item._class),
+      style: style && style.css || (Array.isArray(item) ? undefined : item._style),
+      'data-index': i,
+      'data-uniqueid': Utils.getItemField(item, this.options.uniqueId, false),
+      'data-has-detail-view': this.options.detailView &&
+        Utils.calculateObjectValue(null, this.options.detailFilter, [i, item]) ? 'true' : undefined,
+      ...attributes,
+      ...data_
+    })
+    const trChildren = []
     let detailViewTemplate = ''
 
     if (Utils.hasDetailViewIcon(this.options)) {
-      detailViewTemplate = '<td>'
+      detailViewTemplate = Utils.h('td')
 
       if (Utils.calculateObjectValue(null, this.options.detailFilter, [i, item])) {
-        detailViewTemplate += `
-          <a class="detail-icon" href="#">
-          ${Utils.sprintf(this.constants.html.icon, this.options.iconsPrefix, this.options.icons.detailOpen)}
-          </a>
-        `
+        detailViewTemplate.append(Utils.h('a', {
+          class: 'detail-icon',
+          href: '#',
+          html: Utils.sprintf(this.constants.html.icon, this.options.iconsPrefix, this.options.icons.detailOpen)
+        }))
       }
-
-      detailViewTemplate += '</td>'
     }
 
     if (detailViewTemplate && this.options.detailViewAlign !== 'right') {
-      html.push(detailViewTemplate)
+      trChildren.push(detailViewTemplate)
     }
 
-    this.header.fields.forEach((field, j) => {
+    const tds = this.header.fields.map((field, j) => {
       const column = this.columns[j]
-      let text = ''
       const value_ = Utils.getItemField(item, field, this.options.escape, column.escape)
       let value = ''
-      let type = ''
-      let cellStyle = {}
-      let id_ = ''
-      let class_ = this.header.classes[j]
-      let style_ = ''
-      let styleToAdd_ = ''
-      let data_ = ''
-      let rowspan_ = ''
-      let colspan_ = ''
-      let title_ = ''
+      const attrs = {
+        class: this.header.classes[j] ? [this.header.classes[j]] : [],
+        style: this.header.styles[j] ? [this.header.styles[j]] : []
+      }
+      const cardViewClass = `card-view card-view-field-${field}`
 
       if ((this.fromHtml || this.autoMergeCells) && typeof value_ === 'undefined') {
         if (!column.checkbox && !column.radio) {
@@ -1604,47 +1591,28 @@ class BootstrapTable {
         return
       }
 
-      // Style concat
-      if (csses.concat([this.header.styles[j]]).length) {
-        styleToAdd_ += `${csses.concat([this.header.styles[j]]).join('; ')}`
-      }
-      if (item[`_${field}_style`]) {
-        styleToAdd_ += `${item[`_${field}_style`]}`
+      // handle class, style, id, rowspan, colspan and title of td
+      for (const attr of ['class', 'style', 'id', 'rowspan', 'colspan', 'title']) {
+        const value = item[`_${field}_${attr}`]
+
+        if (!value) {
+          continue
+        }
+        if (attrs[attr]) {
+          attrs[attr].push(value)
+        } else {
+          attrs[attr] = value
+        }
       }
 
-      if (styleToAdd_) {
-        style_ = ` style="${styleToAdd_}"`
-      }
-      // Style concat
+      const cellStyle = Utils.calculateObjectValue(this.header,
+        this.header.cellStyles[j], [value_, item, i, field], {})
 
-      // handle id and class of td
-      if (item[`_${field}_id`]) {
-        id_ = Utils.sprintf(' id="%s"', item[`_${field}_id`])
-      }
-      if (item[`_${field}_class`]) {
-        class_ = Utils.sprintf(' class="%s"', item[`_${field}_class`])
-      }
-      if (item[`_${field}_rowspan`]) {
-        rowspan_ = Utils.sprintf(' rowspan="%s"', item[`_${field}_rowspan`])
-      }
-      if (item[`_${field}_colspan`]) {
-        colspan_ = Utils.sprintf(' colspan="%s"', item[`_${field}_colspan`])
-      }
-      if (item[`_${field}_title`]) {
-        title_ = Utils.sprintf(' title="%s"', item[`_${field}_title`])
-      }
-      cellStyle = Utils.calculateObjectValue(this.header,
-        this.header.cellStyles[j], [value_, item, i, field], cellStyle)
       if (cellStyle.classes) {
-        class_ = ` class="${cellStyle.classes}"`
+        attrs.class.push(cellStyle.classes)
       }
       if (cellStyle.css) {
-        const csses_ = []
-
-        for (const [key, value] of Object.entries(cellStyle.css)) {
-          csses_.push(`${key}: ${value}`)
-        }
-        style_ = ` style="${csses_.concat(this.header.styles[j]).join('; ')}"`
+        attrs.style.push(cellStyle.css)
       }
 
       value = Utils.calculateObjectValue(column,
@@ -1655,11 +1623,15 @@ class BootstrapTable {
           this.options.undefinedText : value
       }
 
-      if (column.searchable && this.searchText && this.options.searchHighlight && !(column.checkbox || column.radio)) {
-        let defValue = ''
+      if (
+        column.searchable &&
+        this.searchText &&
+        this.options.searchHighlight &&
+        !(column.checkbox || column.radio)
+      ) {
         let searchText = this.searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-        if (this.options.searchAccentNeutralise) {
+        if (this.options.searchAccentNeutralise && typeof value === 'string') {
           const indexRegex = new RegExp(`${Utils.normalizeAccent(searchText)}`, 'gmi')
           const match = indexRegex.exec(Utils.normalizeAccent(value))
 
@@ -1668,22 +1640,10 @@ class BootstrapTable {
           }
         }
 
-        const regExp = new RegExp(`(${searchText})`, 'gim')
-        const marker = '<mark>$1</mark>'
-        const isHTML = value && /<(?=.*? .*?\/ ?>|br|hr|input|!--|wbr)[a-z]+.*?>|<([a-z]+).*?<\/\1>/i.test(value)
+        const defValue = Utils.replaceSearchMark(value, searchText)
 
-        if (isHTML) {
-          // value can contains a HTML tags
-          let textContent = new DOMParser().parseFromString(value.toString(), 'text/html').documentElement.textContent
-          const textReplaced = textContent.replace(regExp, marker)
-
-          textContent = textContent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-          defValue = value.replace(new RegExp(`(>\\s*)(${textContent})(\\s*)`, 'gm'), `$1${textReplaced}$3`)
-        } else {
-          // but usually not
-          defValue = value.toString().replace(regExp, marker)
-        }
-        value = Utils.calculateObjectValue(column, column.searchHighlightFormatter, [value, this.searchText], defValue)
+        value = Utils.calculateObjectValue(column, column.searchHighlightFormatter,
+          [value, this.searchText], defValue)
       }
 
       if (item[`_${field}_data`] && !Utils.isEmptyObject(item[`_${field}_data`])) {
@@ -1692,64 +1652,80 @@ class BootstrapTable {
           if (k === 'index') {
             return
           }
-          data_ += ` data-${k}="${v}"`
+          attrs[`data-${k}`] = v
         }
       }
 
       if (column.checkbox || column.radio) {
-        type = column.checkbox ? 'checkbox' : type
-        type = column.radio ? 'radio' : type
-
-        const c = column['class'] || ''
+        const type = column.checkbox ? 'checkbox' : 'radio'
         const isChecked = Utils.isObject(value) && value.hasOwnProperty('checked') ?
           value.checked : (value === true || value_) && value !== false
         const isDisabled = !column.checkboxEnabled || value && value.disabled
-
-        text = [
-          this.options.cardView ?
-            `<div class="card-view ${c}">` :
-            `<td class="bs-checkbox ${c}"${class_}${style_}>`,
-          `<label>
-            <input
-            data-index="${i}"
-            name="${this.options.selectItemName}"
-            type="${type}"
-            ${Utils.sprintf('value="%s"', item[this.options.idField])}
-            ${Utils.sprintf('checked="%s"', isChecked ? 'checked' : undefined)}
-            ${Utils.sprintf('disabled="%s"', isDisabled ? 'disabled' : undefined)} />
-            <span></span>
-            </label>`,
-          this.header.formatters[j] && typeof value === 'string' ? value : '',
-          this.options.cardView ? '</div>' : '</td>'
-        ].join('')
+        const valueNodes = this.header.formatters[j] && (
+          typeof value === 'string' || value instanceof Node || value instanceof $) ? Utils.htmlToNodes(value) : []
 
         item[this.header.stateField] = value === true || (!!value_ || value && value.checked)
-      } else if (this.options.cardView) {
-        const cardTitle = this.options.showHeader ?
-          `<span class="card-view-title ${cellStyle.classes || ''}"${style_}>${Utils.getFieldTitle(this.columns, field)}</span>` : ''
 
-        text = `<div class="card-view">${cardTitle}<span class="card-view-value ${cellStyle.classes || ''}"${style_}>${value}</span></div>`
-
-        if (this.options.smartDisplay && value === '') {
-          text = '<div class="card-view"></div>'
-        }
-      } else {
-        text = `<td${id_}${class_}${style_}${data_}${rowspan_}${colspan_}${title_}>${value}</td>`
+        return Utils.h(this.options.cardView ? 'div' : 'td', {
+          class: [this.options.cardView ? cardViewClass : 'bs-checkbox', column.class],
+          style: this.options.cardView ? undefined : attrs.style
+        }, [
+          Utils.h('label', {}, [
+            Utils.h('input', {
+              'data-index': i,
+              name: this.options.selectItemName,
+              type,
+              value: item[this.options.idField],
+              checked: isChecked ? 'checked' : undefined,
+              disabled: isDisabled ? 'disabled' : undefined
+            }),
+            Utils.h('span')
+          ]),
+          ...valueNodes
+        ])
       }
 
-      html.push(text)
-    })
+      if (this.options.cardView) {
+        if (this.options.smartDisplay && value === '') {
+          return Utils.h('div', { class: cardViewClass })
+        }
+
+        const cardTitle = this.options.showHeader ?
+          Utils.h('span', {
+            class: ['card-view-title', cellStyle.classes],
+            style: attrs.style,
+            html: Utils.getFieldTitle(this.columns, field)
+          }) : ''
+
+        return Utils.h('div', { class: cardViewClass }, [
+          cardTitle,
+          Utils.h('span', {
+            class: ['card-view-value', cellStyle.classes],
+            style: attrs.style
+          }, [...Utils.htmlToNodes(value)])
+        ])
+      }
+
+      return Utils.h('td', attrs, [...Utils.htmlToNodes(value)])
+    }).filter(x => x)
+
+    trChildren.push(...tds)
 
     if (detailViewTemplate && this.options.detailViewAlign === 'right') {
-      html.push(detailViewTemplate)
+      trChildren.push(detailViewTemplate)
     }
 
     if (this.options.cardView) {
-      html.push('</div></td>')
+      tr.append(Utils.h('td', {
+        colspan: this.header.fields.length
+      }, [
+        Utils.h('div', { class: 'card-views' }, trChildren)
+      ]))
+    } else {
+      tr.append(...trChildren)
     }
-    html.push('</tr>')
 
-    return html.join('')
+    return tr
   }
 
   initBody (fixedScroll, updatedUid) {
@@ -1777,12 +1753,13 @@ class BootstrapTable {
 
     for (let i = this.pageFrom - 1; i < this.pageTo; i++) {
       const item = data[i]
-      let tr = this.initRow(item, i, data, trFragments)
+      const tr = this.initRow(item, i, data, trFragments)
 
       hasTr = hasTr || !!tr
-      if (tr && typeof tr === 'string') {
+      if (tr && tr instanceof Node) {
 
         const uniqueId = this.options.uniqueId
+        const toAppend = [tr]
 
         if (uniqueId && item.hasOwnProperty(uniqueId)) {
           const itemUniqueId = item[uniqueId]
@@ -1795,24 +1772,27 @@ class BootstrapTable {
             toExpand.push(i)
 
             if (!updatedUid || itemUniqueId !== updatedUid) {
-              tr += oldTrNext[0].outerHTML
+              toAppend.push(oldTrNext[0])
             }
           }
         }
 
         if (!this.options.virtualScroll) {
-          trFragments.append(tr)
+          trFragments.append(toAppend)
         } else {
-          rows.push(tr)
+          rows.push($('<div>').html(toAppend).html())
         }
       }
     }
+
+    this.$el.removeAttr('role')
 
     // show no records
     if (!hasTr) {
       this.$body.html(`<tr class="no-records-found">${Utils.sprintf('<td colspan="%s">%s</td>',
         this.getVisibleFields().length + Utils.getDetailViewIndexOffset(this.options),
         this.options.formatNoMatches())}</tr>`)
+      this.$el.attr('role', 'presentation')
     } else if (!this.options.virtualScroll) {
       this.$body.html(trFragments)
     } else {
@@ -1966,7 +1946,7 @@ class BootstrapTable {
     })
   }
 
-  initServer (silent, query, url) {
+  initServer (silent, query) {
     let data = {}
     const index = this.header.fields.indexOf(this.options.sortName)
 
@@ -1986,7 +1966,7 @@ class BootstrapTable {
       params.pageNumber = this.options.pageNumber
     }
 
-    if (!(url || this.options.url) && !this.options.ajax) {
+    if (!this.options.url && !this.options.ajax) {
       return
     }
 
@@ -2048,7 +2028,7 @@ class BootstrapTable {
     }
     const request = Utils.extend({}, Utils.calculateObjectValue(null, this.options.ajaxOptions), {
       type: this.options.method,
-      url: url || this.options.url,
+      url: this.options.url,
       data: this.options.contentType === 'application/json' && this.options.method === 'post' ?
         JSON.stringify(data) : data,
       cache: this.options.cache,
@@ -2286,7 +2266,10 @@ class BootstrapTable {
     let detailTemplate = ''
 
     if (Utils.hasDetailViewIcon(this.options)) {
-      detailTemplate = '<th class="detail"><div class="th-inner"></div><div class="fht-cell"></div></th>'
+      detailTemplate = Utils.h('th', { class: 'detail' }, [
+        Utils.h('div', { class: 'th-inner' }),
+        Utils.h('div', { class: 'fht-cell' })
+      ])
     }
 
     if (detailTemplate && this.options.detailViewAlign !== 'right') {
@@ -2294,15 +2277,11 @@ class BootstrapTable {
     }
 
     for (const column of this.columns) {
-      let falign = ''
-      let valign = ''
-      const csses = []
-      let style = {}
-      let class_ = Utils.sprintf(' class="%s"', column['class'])
+      const hasData = this.footerData && this.footerData.length > 0
 
       if (
         !column.visible ||
-        this.footerData && this.footerData.length > 0 && !(column.field in this.footerData[0])
+        hasData && !(column.field in this.footerData[0])
       ) {
         continue
       }
@@ -2311,46 +2290,28 @@ class BootstrapTable {
         return
       }
 
-      falign = Utils.sprintf('text-align: %s; ', column.falign ? column.falign : column.align)
-      valign = Utils.sprintf('vertical-align: %s; ', column.valign)
+      const style = Utils.calculateObjectValue(null, column.footerStyle || this.options.footerStyle, [column])
+      const csses = style && style.css || {}
+      const colspan = hasData && this.footerData[0][`_${column.field}_colspan`] || 0
+      let value = hasData && this.footerData[0][column.field] || ''
 
-      style = Utils.calculateObjectValue(null, column.footerStyle || this.options.footerStyle, [column])
+      value = Utils.calculateObjectValue(column, column.footerFormatter,
+        [data, value], value)
 
-      if (style && style.css) {
-        for (const [key, value] of Object.entries(style.css)) {
-          csses.push(`${key}: ${value}`)
-        }
-      }
-      if (style && style.classes) {
-        class_ = Utils.sprintf(' class="%s"', column['class'] ?
-          [column['class'], style.classes].join(' ') : style.classes)
-      }
-
-      html.push('<th', class_, Utils.sprintf(' style="%s"', falign + valign + csses.concat().join('; ') || undefined))
-      let colspan = 0
-
-      if (this.footerData && this.footerData.length > 0) {
-        colspan = this.footerData[0][`_${column.field}_colspan`] || 0
-      }
-      if (colspan) {
-        html.push(` colspan="${colspan}" `)
-      }
-
-      html.push('>')
-      html.push('<div class="th-inner">')
-
-      let value = ''
-
-      if (this.footerData && this.footerData.length > 0) {
-        value = this.footerData[0][column.field] || ''
-      }
-      html.push(Utils.calculateObjectValue(column, column.footerFormatter,
-        [data, value], value))
-
-      html.push('</div>')
-      html.push('<div class="fht-cell"></div>')
-      html.push('</div>')
-      html.push('</th>')
+      html.push(Utils.h('th', {
+        class: [column['class'], style && style.classes],
+        style: {
+          'text-align': column.falign ? column.falign : column.align,
+          'vertical-align': column.valign,
+          ...csses
+        },
+        colspan: colspan || undefined
+      }, [
+        Utils.h('div', {
+          class: 'th-inner'
+        }, [...Utils.htmlToNodes(value)]),
+        Utils.h('div', { class: 'fht-cell' })
+      ]))
     }
 
     if (detailTemplate && this.options.detailViewAlign === 'right') {
@@ -2366,7 +2327,7 @@ class BootstrapTable {
       this.$tableFooter.html('<table><thead><tr></tr></thead></table>')
     }
 
-    this.$tableFooter.find('tr').html(html.join(''))
+    this.$tableFooter.find('tr').html(html)
 
     this.trigger('post-footer', this.$tableFooter)
   }
@@ -2475,6 +2436,7 @@ class BootstrapTable {
     if (Utils.compareObjects(this.options, options, true)) {
       return
     }
+    this.optionsColumnsChanged = !!options.columns
     this.options = Utils.extend(this.options, options)
     this.trigger('refresh-options', this.options)
     this.destroy()
@@ -2509,20 +2471,28 @@ class BootstrapTable {
     }
 
     if (params && params.formatted) {
-      data.forEach(row => {
+      return data.map(row => {
+        const formattedColumns = {}
+
         for (const [key, value] of Object.entries(row)) {
           const column = this.columns[this.fieldsColumnsIndex[key]]
 
           if (!column) {
-            return
+            continue
           }
 
-          row[key] = Utils.calculateObjectValue(column, this.header.formatters[column.fieldIndex], [value, row, row.index, column.field], value)
+          formattedColumns[key] = Utils.calculateObjectValue(column, this.header.formatters[column.fieldIndex],
+            [value, row, row.index, column.field], value)
         }
+        return formattedColumns
       })
     }
 
     return data
+  }
+
+  getFooterData () {
+    return this.footerData ?? []
   }
 
   getSelections () {
@@ -2570,7 +2540,6 @@ class BootstrapTable {
     let removed = 0
 
     for (let i = this.options.data.length - 1; i >= 0; i--) {
-
       const row = this.options.data[i]
       const value = Utils.getItemField(row, params.field, this.options.escape, row.escape)
 
@@ -2607,6 +2576,7 @@ class BootstrapTable {
 
   removeAll () {
     if (this.options.data.length > 0) {
+      this.data.splice(0, this.data.length)
       this.options.data.splice(0, this.options.data.length)
       this.initSearch()
       this.initPagination()
@@ -2618,7 +2588,16 @@ class BootstrapTable {
     if (!params.hasOwnProperty('index') || !params.hasOwnProperty('row')) {
       return
     }
-    this.options.data.splice(params.index, 0, params.row)
+    const row = this.data[params.index]
+    const originalIndex = this.options.data.indexOf(row)
+
+    if (originalIndex === -1) {
+      this.append([params.row])
+      return
+    }
+
+    this.data.splice(params.index, 0, params.row)
+    this.options.data.splice(originalIndex, 0, params.row)
     this.initSearch()
     this.initPagination()
     this.initSort()
@@ -2632,11 +2611,15 @@ class BootstrapTable {
       if (!params.hasOwnProperty('index') || !params.hasOwnProperty('row')) {
         continue
       }
+      const row = this.data[params.index]
+      const originalIndex = this.options.data.indexOf(row)
 
       if (params.hasOwnProperty('replace') && params.replace) {
-        this.options.data[params.index] = params.row
+        this.data[params.index] = params.row
+        this.options.data[originalIndex] = params.row
       } else {
-        Utils.extend(this.options.data[params.index], params.row)
+        Utils.extend(this.data[params.index], params.row)
+        Utils.extend(this.options.data[originalIndex], params.row)
       }
     }
 
@@ -2733,7 +2716,7 @@ class BootstrapTable {
   }
 
   _updateCellOnly (field, index) {
-    const rowHtml = this.initRow(this.options.data[index], index)
+    const rowHtml = this.initRow(this.data[index], index)
     let fieldIndex = this.getVisibleFields().indexOf(field)
 
     if (fieldIndex === -1) {
@@ -2758,7 +2741,11 @@ class BootstrapTable {
       !params.hasOwnProperty('value')) {
       return
     }
-    this.options.data[params.index][params.field] = params.value
+    const row = this.data[params.index]
+    const originalIndex = this.options.data.indexOf(row)
+
+    this.data[params.index][params.field] = params.value
+    this.options.data[originalIndex][params.field] = params.value
 
     if (params.reinit === false) {
       this._updateCellOnly(params.field, params.index)
@@ -2858,7 +2845,7 @@ class BootstrapTable {
   }
 
   _toggleColumn (index, checked, needUpdate) {
-    if (index === -1 || this.columns[index].visible === checked) {
+    if (index === undefined || this.columns[index].visible === checked) {
       return
     }
     this.columns[index].visible = checked
@@ -2940,8 +2927,8 @@ class BootstrapTable {
   mergeCells (options) {
     const row = options.index
     let col = this.getVisibleFields().indexOf(options.field)
-    const rowspan = options.rowspan || 1
-    const colspan = options.colspan || 1
+    const rowspan = +options.rowspan || 1
+    const colspan = +options.colspan || 1
     let i
     let j
     const $tr = this.$body.find('>tr[data-index]')
@@ -3101,11 +3088,15 @@ class BootstrapTable {
     if (params && params.pageSize) {
       this.options.pageSize = params.pageSize
     }
-    this.trigger('refresh', this.initServer(params && params.silent,
-      params && params.query, params && params.url))
+    if (params && params.query) {
+      this.options.url = Utils.addQueryToUrl(this.options.url, params.query)
+    }
+
+    this.trigger('refresh', this.initServer(params && params.silent))
   }
 
   destroy () {
+    clearTimeout(this.timeoutId_)
     this.$el.insertBefore(this.$container)
     $(this.options.toolbar).insertBefore(this.$el)
     this.$container.next().remove()
@@ -3234,12 +3225,13 @@ class BootstrapTable {
     this.initHeader()
 
     const icon = this.options.showButtonIcons ? this.options.cardView ? this.options.icons.toggleOn : this.options.icons.toggleOff : ''
-    const text = this.options.showButtonText ? this.options.cardView ? this.options.formatToggleOff() : this.options.formatToggleOn() : ''
+    const text = this.options.cardView ? this.options.formatToggleOff() : this.options.formatToggleOn()
 
     this.$toolbar.find('button[name="toggle"]')
-      .html(`${Utils.sprintf(this.constants.html.icon, this.options.iconsPrefix, icon)} ${text}`)
+      .html(`${Utils.sprintf(this.constants.html.icon, this.options.iconsPrefix,
+        icon)} ${this.options.showButtonText ? text : ''}`)
       .attr('aria-label', text)
-      .attr('title', text)
+      .attr(this.options.buttonsAttributeTitle, text)
 
     this.initBody()
     this.trigger('toggle', this.options.cardView)
@@ -3256,7 +3248,8 @@ class BootstrapTable {
   }
 
   filterBy (columns, options) {
-    this.filterOptions = Utils.isEmptyObject(options) ? this.options.filterOptions : Utils.extend(this.options.filterOptions, options)
+    this.filterOptions = Utils.isEmptyObject(options) ? this.options.filterOptions :
+      Utils.extend({}, this.options.filterOptions, options)
     this.filterColumns = Utils.isEmptyObject(columns) ? {} : columns
     this.options.pageNumber = 1
     this.initSearch()

@@ -155,6 +155,20 @@ The table options are defined in `jQuery.fn.bootstrapTable.defaults`.
 
 - **Example:** [Buttons Align](https://examples.bootstrap-table.com/#options/buttons-align.html)
 
+## buttonsAttributeTitle
+
+- **Attribute:** `data-buttons-attribute-title`
+
+- **Type:** `String`
+
+- **Detail:**
+
+  Customize the title attribute of the toolbar buttons, which is mainly used to customize the toolbar style.
+
+- **Default:** `'title'`
+
+- **Example:** [Buttons Attribute Title](https://examples.bootstrap-table.com/#options/buttons-attribute-title.html)
+
 ## buttonsClass
 
 - **Attribute:** `data-buttons-class`
@@ -1961,6 +1975,8 @@ The table options are defined in `jQuery.fn.bootstrapTable.defaults`.
 - **Detail:**
 
   Set `true` to enable virtual scroll to display a virtual, "infinite" list.
+
+  **Note:** Currently, the implementation assumes that each line has the same height. If the heights of the lines vary, unpredictable bugs may occur. Please ensure that the height of each line is consistent, or apply the style `td { white-space: nowrap; }` to address this issue.
 
 - **Default:** `false`
 

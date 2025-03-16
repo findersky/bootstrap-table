@@ -1,6 +1,6 @@
 /**
  * @author zhixin wen <wenzhixin2010@gmail.com>
- * version: 1.24.0
+ * version: 1.24.1
  * https://github.com/wenzhixin/bootstrap-table/
  */
 
@@ -47,7 +47,8 @@ class BootstrapTable {
     }
 
     opts.iconsPrefix = opts.iconsPrefix || $.fn.bootstrapTable.defaults.iconsPrefix || iconsPrefix
-    opts.icons = Object.assign(Utils.getIcons(opts.iconsPrefix), $.fn.bootstrapTable.defaults.icons, opts.icons)
+    opts.icons = Object.assign(Utils.getIcons(Constants.ICONS, opts.iconsPrefix),
+      $.fn.bootstrapTable.defaults.icons, opts.icons)
 
     // init buttons class
     const buttonsPrefix = opts.buttonsPrefix ? `${opts.buttonsPrefix}-` : ''
@@ -1256,11 +1257,17 @@ class BootstrapTable {
     }
 
     if (this.paginationParts.includes('pageInfo') || this.paginationParts.includes('pageInfoShort')) {
-      const totalRows = this.options.totalRows +
-        (this.options.sidePagination === 'client' &&
+      let totalRows = this.options.totalRows
+
+      if (
+        this.options.sidePagination === 'client' &&
         this.options.paginationLoadMore &&
         !this._paginationLoaded &&
-        this.totalPages > 1 ? ' +' : '')
+        this.totalPages > 1
+      ) {
+        totalRows += ' +'
+      }
+
       const paginationInfo = this.paginationParts.includes('pageInfoShort') ?
         opts.formatDetailPagination(totalRows) :
         opts.formatShowingRows(this.pageFrom, this.pageTo, totalRows, opts.totalNotFiltered)
@@ -2716,6 +2723,10 @@ class BootstrapTable {
   }
 
   _updateCellOnly (field, index) {
+    if (index === -1) {
+      return
+    }
+
     const rowHtml = this.initRow(this.data[index], index)
     let fieldIndex = this.getVisibleFields().indexOf(field)
 
@@ -2759,17 +2770,21 @@ class BootstrapTable {
     const allParams = Array.isArray(params) ? params : [params]
 
     allParams.forEach(({ id, field, value }) => {
-      const index = this.options.data.indexOf(this.getRowByUniqueId(id))
+      const row = this.getRowByUniqueId(id)
+      const index = this.data.indexOf(row)
+      const originalIndex = this.options.data.indexOf(row)
 
-      if (index === -1) {
+      if (!row || index === -1) {
         return
       }
-      this.options.data[index][field] = value
+
+      this.data[index][field] = value
+      this.options.data[originalIndex][field] = value
     })
 
     if (params.reinit === false) {
       this._updateCellOnly(params.field,
-        this.options.data.indexOf(this.getRowByUniqueId(params.id)))
+        this.data.indexOf(this.getRowByUniqueId(params.id)))
       return
     }
     this.initSort()
@@ -3482,6 +3497,7 @@ $.fn.bootstrapTable = function (option, ...args) {
 $.fn.bootstrapTable.Constructor = BootstrapTable
 $.fn.bootstrapTable.theme = Constants.THEME
 $.fn.bootstrapTable.VERSION = Constants.VERSION
+$.fn.bootstrapTable.icons = Constants.ICONS
 $.fn.bootstrapTable.defaults = BootstrapTable.DEFAULTS
 $.fn.bootstrapTable.columnDefaults = BootstrapTable.COLUMN_DEFAULTS
 $.fn.bootstrapTable.events = BootstrapTable.EVENTS

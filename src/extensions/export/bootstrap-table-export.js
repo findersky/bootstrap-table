@@ -32,13 +32,12 @@ Object.assign($.fn.bootstrapTable.columnDefaults, {
   forceHide: false
 })
 
-Object.assign($.fn.bootstrapTable.defaults.icons, {
-  export: {
-    bootstrap3: 'glyphicon-export icon-share',
-    bootstrap5: 'bi-download',
-    materialize: 'file_download',
-    'bootstrap-table': 'icon-download'
-  }[$.fn.bootstrapTable.theme] || 'fa-download'
+Utils.assignIcons($.fn.bootstrapTable.icons, 'export', {
+  glyphicon: 'glyphicon-export icon-share',
+  fa: 'fa-download',
+  bi: 'bi-download',
+  icon: 'icon-download',
+  'material-icons': 'file_download'
 })
 
 Object.assign($.fn.bootstrapTable.locales, {
@@ -285,7 +284,10 @@ $.BootstrapTable = class extends $.BootstrapTable {
       this.options.virtualScroll = false
       this.togglePagination()
     } else if (o.exportDataType === 'selected') {
-      let data = this.getData()
+      let data = this.getData({
+        includeHiddenRows: true,
+        unfiltered: true
+      })
       let selectedData = this.getSelections()
       const pagination = o.pagination
 
